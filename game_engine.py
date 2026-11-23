@@ -1,10 +1,39 @@
 """Deterministic game rules. No network calls, AI, or paid services."""
 from copy import deepcopy
+import re
 from data import CASE_001
 
 
+def egyptian_time(hour, minute):
+    """Isolate the LTR clock inside an RTL phrase; keep its daypart attached."""
+    hour = int(hour)
+    daypart = ("بعد نص الليل" if hour < 5 else "الصبح" if hour < 12
+               else "الضهر" if hour < 15 else "العصر" if hour < 18 else "بليل")
+    clock = f"{hour % 12 or 12}:{minute}"
+    return "\u2067\u2066" + clock + "\u2069\u00a0" + daypart.replace(" ", "\u00a0") + "\u2069"
+
+
+def display_times(text):
+    # Replace explicit ranges first, with words instead of a bidi-ambiguous dash.
+    text = re.sub(r"(?<!\d)([01]\d|2[0-3]):([0-5]\d)[–-]([01]\d|2[0-3]):([0-5]\d)(?!\d)",
+                  lambda m: "من " + egyptian_time(m[1], m[2]) + " لحد " + egyptian_time(m[3], m[4]), text)
+    return re.sub(r"(?<![\d\u2066])([01]\d|2[0-3]):([0-5]\d)(?![\d\u2069])",
+                  lambda m: egyptian_time(m[1], m[2]), text)
+
+
+def _display_copy(value):
+    if isinstance(value, str):
+        return display_times(value)
+    if isinstance(value, list):
+        return [_display_copy(item) for item in value]
+    if isinstance(value, dict):
+        return {key: _display_copy(item) for key, item in value.items()}
+    return value
+
+
 def generate_case():
-    return deepcopy(CASE_001)
+    # Canonical 24-hour facts stay in data.py; only the displayed copy changes.
+    return _display_copy(deepcopy(CASE_001))
 
 
 def evidence_cards(case):
