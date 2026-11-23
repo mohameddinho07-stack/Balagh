@@ -1,28 +1,24 @@
 import random
 
 from data import (
-    CRIME_TYPES,
+    CHARACTERS,
     LOCATIONS,
-    SUSPECTS,
-    CLUES
+    VICTIMS
 )
 
 def generate_case():
 
-    crime = random.choice(CRIME_TYPES)
-
     location = random.choice(LOCATIONS)
 
-    suspects = random.sample(SUSPECTS, 4)
+    victim = random.choice(VICTIMS)
+
+    suspects = random.sample(CHARACTERS, 4)
 
     killer = random.choice(suspects)
 
-    clues = random.sample(CLUES, 3)
-
     return {
-        "crime": crime,
+        "victim": victim,
         "location": location,
         "suspects": suspects,
-        "killer": killer,
-        "clues": clues
+        "killer": killer
     }
