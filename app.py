@@ -33,36 +33,49 @@ if st.session_state.case:
 
     st.markdown("---")
 
-    with st.expander("📁 تقرير الطب الشرعي"):
-        st.text(case["forensic_report"])
+    col1, col2 = st.columns([2, 1])
 
-    with st.expander("📁 كاميرات المراقبة"):
-        st.text(case["camera_report"])
+    with col1:
 
-    with st.expander("📁 سجل المكالمات"):
-        st.text(case["call_log"])
+        with st.expander("📁 تقرير الطب الشرعي"):
+            st.text(case["forensic_report"])
 
-    with st.expander("📁 أقوال الشهود"):
-        st.text(case["witness_statement"])
+        with st.expander("📁 كاميرات المراقبة"):
+            st.text(case["camera_report"])
 
-    with st.expander("📁 التسلسل الزمني"):
-        for item in case["timeline"]:
-            st.write(item)
+        with st.expander("📁 سجل المكالمات"):
+            st.text(case["call_log"])
+
+        with st.expander("📁 أقوال الشهود"):
+            st.text(case["witness_statement"])
+
+        with st.expander("📁 التسلسل الزمني"):
+
+            for item in case["timeline"]:
+                st.write(item)
+
+    with col2:
+
+        st.subheader("🕵️ المشتبه بهم")
+
+        for suspect in case["suspects"]:
+
+            st.info(
+                f"""
+{suspect['name']}
+
+{suspect['job']}
+"""
+            )
 
     st.markdown("---")
 
-    st.subheader("🕵️ المشتبه بهم")
+    st.subheader("📓 دفتر المحقق")
 
-    for suspect in case["suspects"]:
-        st.info(
-            f"""
-الاسم: {suspect['name']}
-
-العمر: {suspect['age']}
-
-الوظيفة: {suspect['job']}
-"""
-        )
+    notes = st.text_area(
+        "اكتب ملاحظاتك واستنتاجاتك",
+        height=200
+    )
 
     st.markdown("---")
 
