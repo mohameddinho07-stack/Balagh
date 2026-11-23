@@ -19,7 +19,8 @@ if st.session_state.case:
 
     case = st.session_state.case
 
-    st.markdown(f"""
+    st.markdown(
+        f"""
 # 🚨 بلاغ رقم 001
 
 ## القضية: {case["title"]}
@@ -27,7 +28,8 @@ if st.session_state.case:
 📍 الموقع: {case["location"]}
 
 👤 الضحية: {case["victim"]}
-""")
+"""
+    )
 
     st.error(case["story"])
 
@@ -62,7 +64,7 @@ if st.session_state.case:
 
             st.info(
                 f"""
-{suspect['name']}
+**{suspect['name']}**
 
 {suspect['job']}
 """
@@ -82,8 +84,8 @@ if st.session_state.case:
     st.subheader("⚖️ قرار الاتهام")
 
     suspect_names = [
-        s["name"]
-        for s in case["suspects"]
+        suspect["name"]
+        for suspect in case["suspects"]
     ]
 
     selected = st.selectbox(
@@ -91,29 +93,28 @@ if st.session_state.case:
         suspect_names
     )
 
+    if st.button("⚖️ توجيه الاتهام"):
 
-if st.button("⚖️ توجيه الاتهام"):
+        if selected == case["truth"]["killer"]:
 
-    if selected == case["truth"]["killer"]:
-
-        st.success(
-            """
+            st.success(
+                """
 ✅ اتهام صحيح
 
 أحسنت أيها المحقق.
 
 لقد تمكنت من كشف الحقيقة.
 """
-        )
+            )
 
-    else:
+        else:
 
-        st.error(
-            f"""
+            st.error(
+                f"""
 ❌ اتهام خاطئ
 
 المتهم الحقيقي:
 
 {case['truth']['killer']}
 """
-        )
+            )
