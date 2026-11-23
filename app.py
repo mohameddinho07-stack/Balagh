@@ -1,5 +1,5 @@
 import streamlit as st
-from game_engine import generate_case
+from game_engine import generate_case, investigate
 
 st.set_page_config(
     page_title="بلاغ",
@@ -8,13 +8,21 @@ st.set_page_config(
 )
 
 st.title("🚨 بلاغ")
-st.markdown("### وصل بلاغ... والحقيقة مستخبية.")
+
+st.markdown(
+    "## وصل بلاغ... والحقيقة مستخبية في التفاصيل."
+)
 
 if "case" not in st.session_state:
     st.session_state.case = None
 
-if st.button("استلام بلاغ جديد 🚔"):
+if "evidence" not in st.session_state:
+    st.session_state.evidence = []
+
+if st.button("🚔 استلام بلاغ جديد"):
+
     st.session_state.case = generate_case()
+    st.session_state.evidence = []
 
 if st.session_state.case:
 
@@ -25,34 +33,56 @@ if st.session_state.case:
     st.subheader("📄 تفاصيل البلاغ")
 
     st.write(
-        f"تم العثور على **{case['victim']}** داخل **{case['location']}** في ظروف غامضة."
+        f"تم العثور على {case['victim']} داخل {case['location']} في ظروف غامضة."
     )
 
     st.markdown("---")
 
-    st.subheader("🕵️ المشتبه بهم")
+    st.subheader("🕵️ إجراءات التحقيق")
 
-    cols = st.columns(2)
+    col1, col2 = st.columns(2)
 
-    for idx, suspect in enumerate(case["suspects"]):
+    with col1:
 
-        with cols[idx % 2]:
+        if st.button("🔍 فحص الجثة"):
+            result = investigate("فحص الجثة")
+            st.session_state.evidence.append(result)
 
-            st.info(
-                f"""
-الاسم: {suspect['name']}
+        if st.button("📱 فحص الهاتف"):
+            result = investigate("فحص الهاتف")
+            st.session_state.evidence.append(result)
 
-العمر: {suspect['age']} سنة
+    with col2:
 
-الوظيفة: {suspect['job']}
-"""
-            )
+        if st.button("📹 مراجعة الكاميرات"):
+            result = investigate("مراجعة الكاميرات")
+            st.session_state.evidence.append(result)
+
+        if st.button("👤 استجواب الشاهد"):
+            result = investigate("استجواب الشاهد")
+            st.session_state.evidence.append(result)
+
+    st.markdown("---")
+
+    st.subheader("📂 الأدلة المكتشفة")
+
+    if st.session_state.evidence:
+
+        for item in st.session_state.evidence:
+            st.info(item)
+
+    else:
+
+        st.warning("لم يتم جمع أي أدلة حتى الآن.")
 
     st.markdown("---")
 
     st.subheader("⚖️ قرار الاتهام")
 
-    suspect_names = [s["name"] for s in case["suspects"]]
+    suspect_names = [
+        s["name"]
+        for s in case["suspects"]
+    ]
 
     selected = st.selectbox(
         "اختر المتهم الرئيسي",
@@ -67,7 +97,7 @@ if st.session_state.case:
                 f"""
 ✅ تم حل القضية
 
-المتهم الحقيقي:
+المتهم:
 {case['killer']['name']}
 
 الوظيفة:
