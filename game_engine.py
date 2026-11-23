@@ -8,6 +8,12 @@ def generate_case():
         "story": CASE_001["story"],
         "victim": CASE_001["victim"],
         "location": CASE_001["location"],
+
+        "forensic_report": CASE_001["forensic_report"],
+        "camera_report": CASE_001["camera_report"],
+        "call_log": CASE_001["call_log"],
+        "witness_statement": CASE_001["witness_statement"],
+
         "suspects": [
             {
                 "name": "آسر منصور",
@@ -34,20 +40,13 @@ def generate_case():
                 "secret": "كانت تراقب الضحية منذ أسابيع"
             }
         ],
+
         "killer": {
             "name": CASE_001["killer"],
             "job": "صحفية تحقيقات",
             "secret": "كانت تراقب الضحية منذ أسابيع"
         }
     }
-
-
-def investigate(action):
-
-    return CASE_001["evidence"].get(
-        action,
-        "لا توجد معلومات جديدة."
-    )
 
 
 def get_timeline():
