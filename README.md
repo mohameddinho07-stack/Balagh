@@ -85,3 +85,7 @@ Original low-poly procedural scene and original procedural sine-based ambient mu
 
 ## Immersive entry
 New sessions start inside the 3D atmosphere, then Start opens a case chooser containing only the implemented case 001, then existing game modes. A persistent local Streamlit component owns the audio so the same context survives chooser/game reruns; it collapses to an audio bar during play and stops rendering the hidden 3D scene. Initial audio is attempted once, browser policy may block it, and a gesture inside the scene starts it unless the user muted it. Visible mute/play and volume controls remain. No attempt to bypass browser policy. Full refresh starts a new entry visit. The original four-file 3D inspection slice remains a separate mode; entry does not reveal those files before case selection. No database or RPC changes.
+
+
+### Integrated hotel investigation
+The hotel case now opens its own crime scene inside the investigation. Nine original evidence cards are readable from the scene or its file board. Marking a card read updates the same investigation evidence used by interview gates and accusation options. Report packets are a visual file rack, not new physical clues. The room layout remains illustrative. The old experimental mode is no longer in the mode chooser. Solo, co-op and race retain their original boundaries, revision checks and finished-state locks. A single persistent entry component owns music; the crime scene creates no audio context. Future cases need their own scene mapping; no additional cases are included.
