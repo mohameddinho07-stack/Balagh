@@ -10,6 +10,14 @@ st.markdown("""<style>
 [data-testid="stMarkdownContainer"] p, .stButton button p {direction:rtl;unicode-bidi:plaintext;text-align:right;}
 h1, h2, h3, [data-testid="stCaptionContainer"] {text-align:right;direction:rtl;}
 [data-testid="stMainBlockContainer"] {max-width:1100px;}
+
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap');
+html,body,[data-testid="stAppViewContainer"],[data-testid="stHeader"],.stApp{background:#101b19!important;color:#eee5cf!important;font-family:Cairo,Tahoma,sans-serif!important;color-scheme:dark;}
+[data-testid="stMainBlockContainer"]{padding-top:4.4rem;}
+h1,h2,h3,h4,[data-testid="stCaptionContainer"],label,[data-testid="stMetricValue"]{color:#e7d5ae!important;}
+button,[data-baseweb="select"]>div,textarea,input,[data-testid="stExpander"]{background:#21372e!important;color:#eee5cf!important;border-color:#6c8067!important;font-family:Cairo,Tahoma,sans-serif!important;}
+[data-testid="stAlert"],[data-testid="stForm"]{background:#1a2d26!important;color:#eee5cf!important;border-color:#6c8067!important;}
+[data-testid="stMarkdownContainer"],summary{color:#eee5cf;}
 </style>""", unsafe_allow_html=True)
 from pathlib import Path
 import streamlit.components.v1 as components
@@ -175,13 +183,24 @@ crime_scene = components.declare_component('balagh_crime', path=str(Path(__file_
 scene_scope = '|'.join([case['id'], mode, str(room.get('me','')) if room_mode else 'solo'])
 scene_event = crime_scene(cards=evidence_cards(case), discovered=state['discovered'],
     finished=state['finished'], scope=scene_scope, location=public['location'],
-    scene_id='hotel_suite_001', people=[{'id':c['id'],'name':c['name'],'job':c['job']} for c in case['characters']], key='crime_scene_'+scene_scope, default=None)
+    scene_id='hotel_suite_001', people=[{'id':c['id'],'name':c['name'],'job':c['job'],'info':c['public_info'],
+        'questions':[{'id':q['id'],'question':q['question']} for q in available_questions(c,state['discovered'])],
+        'locked':len(c['interviews'])-len(available_questions(c,state['discovered'])),
+        'answers':[a for a in state['interviews'] if a['suspect']==c['name']]} for c in case['characters']], key='crime_scene_'+scene_scope, default=None)
 if isinstance(scene_event, dict) and scene_event.get('nonce') != st.session_state.get('last_scene_nonce'):
     st.session_state.last_scene_nonce = scene_event.get('nonce')
     eid = scene_event.get('evidence')
     person = scene_event.get('person')
     if scene_event.get('scope') == scene_scope and person in {c['id'] for c in case['characters']}:
         st.session_state.focus_person = person
+    topic = scene_event.get('topic')
+    if scene_event.get('scope') == scene_scope and topic and not state['finished']:
+        suspect = next((c for c in case['characters'] if c['id']==person),None)
+        if suspect and topic in {q['id'] for q in available_questions(suspect,state['discovered'])}:
+            persist_room('interview', {'suspect':person,'topic':topic})
+            if not room_mode:
+                record_answer(case,state,person,topic)
+            st.rerun()
     if (scene_event.get('scope') == scene_scope and not state['finished']
             and eid in {e['id'] for e in evidence_cards(case)} and eid not in state['discovered']):
         # Room validation and revision checks run before any local change.
@@ -232,7 +251,7 @@ for evidence in evidence_cards(case):
 
 st.subheader("🕵️ نسمع أقوالهم")
 for suspect in case["characters"]:
-    with st.expander(suspect["name"], expanded=st.session_state.get("focus_person")==suspect["id"]):
+    with st.expander(suspect["name"], expanded=False):
         st.caption(f"{suspect['job']} • {suspect['age']} سنة")
         st.write(suspect["public_info"])
         unlocked = available_questions(suspect, state["discovered"])
