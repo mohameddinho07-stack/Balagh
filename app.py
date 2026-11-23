@@ -95,23 +95,23 @@ if st.session_state.case:
 
         if selected == case["truth"]["killer"]:
 
-            st.success(
-                f"""
-✅ تم حل القضية
+    st.success(
+        """
+✅ اتهام صحيح
 
-المتهم الحقيقي:
-{case['killer']}
+أحسنت أيها المحقق.
+لقد تمكنت من كشف الحقيقة.
 """
-            )
+    )
 
-        else:
+else:
 
-      st.error(
-    f"""
+    st.error(
+        f"""
 ❌ اتهام خاطئ
 
 المتهم الحقيقي:
 
 {case['truth']['killer']}
 """
-)
+    )
