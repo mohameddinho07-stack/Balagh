@@ -2,7 +2,7 @@ import unittest
 from streamlit.testing.v1 import AppTest
 
 def started():
- a=AppTest.from_file('app.py').run();a.button[0].click().run();return a
+ a=AppTest.from_file('app.py');a.session_state['entry_phase']='game';a.run();next(x for x in a.button if x.label=='🚔 يلا نحقق').click().run();return a
 
 
 class AppFlowTests(unittest.TestCase):
@@ -19,7 +19,7 @@ class AppFlowTests(unittest.TestCase):
         a.checkbox(key='reveal_solution').check().run()
         assert any('الحل: نادين' in t.value for t in a.subheader)
         next(b for b in a.button if b.label=='نجرّب من الأول').click().run()
-        assert a.session_state['case'] is None
+        assert 'case' not in a.session_state
         assert 'detective_notes' not in a.session_state
         
         a=started()
@@ -34,7 +34,7 @@ class AppFlowTests(unittest.TestCase):
         a=started();a.radio[0].set_value('🎮 العب مع صحابك').run()
         assert not a.exception
         assert any('ربط الأوض مش جاهز' in m.value for m in a.info)
-        assert len(a.button)==0
+        assert all(x.label=='ارجع لاختيار القضية' for x in a.button)
         print('UI PASS: wrong accusation locks without revealing; opt-in reveal; clean reset; complete evidence win; room configuration safe fallback')
 
 
@@ -43,7 +43,8 @@ class AppFlowTests(unittest.TestCase):
         from ai_interrogation import ask_suspect as real_ask
         a = AppTest.from_file('app.py')
         a.secrets['GROQ_API_KEY'] = 'test'
-        a.run(); a.button[0].click().run()
+        a.session_state['entry_phase'] = 'game'
+        a.run(); next(x for x in a.button if x.label=='🚔 يلا نحقق').click().run()
         selector = a.selectbox(key='ai_suspect')
         assert selector.value is None
         assert selector.options == ['آسر منصور','ليلى الديب','يوسف بيومي','نادين مراد']
