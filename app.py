@@ -1,5 +1,5 @@
 import streamlit as st
-from game_engine import generate_case, investigate, get_timeline
+from game_engine import generate_case, get_timeline
 
 st.set_page_config(
     page_title="بلاغ",
@@ -12,20 +12,14 @@ st.title("🚨 بلاغ")
 if "case" not in st.session_state:
     st.session_state.case = None
 
-if "evidence" not in st.session_state:
-    st.session_state.evidence = []
-
 if st.button("🚔 بدء التحقيق"):
-
     st.session_state.case = generate_case()
-    st.session_state.evidence = []
 
 if st.session_state.case:
 
     case = st.session_state.case
 
-    st.markdown(
-        f"""
+    st.markdown(f"""
 # 🚨 بلاغ رقم 001
 
 ## القضية: {case['title']}
@@ -33,44 +27,79 @@ if st.session_state.case:
 📍 الموقع: {case['location']}
 
 👤 الضحية: {case['victim']}
-"""
-    )
+""")
 
     st.error(case["story"])
 
     st.markdown("---")
 
-    col1, col2 = st.columns([2, 1])
+    with st.expander("📁 تقرير الطب الشرعي"):
+        st.text(case["forensic_report"])
 
-    with col1:
+    with st.expander("📁 كاميرات المراقبة"):
+        st.text(case["camera_report"])
 
-        with st.expander("📁 تقرير الطب الشرعي"):
+    with st.expander("📁 سجل المكالمات"):
+        st.text(case["call_log"])
 
-            if st.button("تحليل الجثة"):
-                st.session_state.evidence.append(
-                    investigate("فحص الجثة")
-                )
+    with st.expander("📁 أقوال الشهود"):
+        st.text(case["witness_statement"])
 
-            st.write(
-                "الضحية توفي في ظروف غامضة ولا توجد إصابات ظاهرة."
+    with st.expander("📁 التسلسل الزمني للقضية"):
+
+        for item in get_timeline():
+            st.write(item)
+
+    st.markdown("---")
+
+    st.subheader("🕵️ المشتبه بهم")
+
+    for suspect in case["suspects"]:
+
+        st.info(
+            f"""
+الاسم: {suspect['name']}
+
+العمر: {suspect['age']} سنة
+
+الوظيفة: {suspect['job']}
+"""
+        )
+
+    st.markdown("---")
+
+    st.subheader("⚖️ قرار الاتهام")
+
+    suspect_names = [
+        s["name"]
+        for s in case["suspects"]
+    ]
+
+    selected = st.selectbox(
+        "اختر المتهم الرئيسي",
+        suspect_names
+    )
+
+    if st.button("⚖️ توجيه الاتهام"):
+
+        if selected == case["killer"]["name"]:
+
+            st.success(
+                f"""
+✅ تم حل القضية
+
+المتهم الحقيقي:
+{case['killer']['name']}
+"""
             )
 
-        with st.expander("📁 كاميرات المراقبة"):
+        else:
 
-            if st.button("مراجعة الكاميرات"):
-                st.session_state.evidence.append(
-                    investigate("مراجعة الكاميرات")
-                )
+            st.error(
+                f"""
+❌ اتهام خاطئ
 
-            st.write(
-                "يوجد فقد في جزء من التسجيلات."
+المتهم الحقيقي:
+{case['killer']['name']}
+"""
             )
-
-        with st.expander("📁 سجل المكالمات"):
-
-            if st.button("فحص الهاتف"):
-                st.session_state.evidence.append(
-                    investigate("فحص الهاتف")
-                )
-
-   
