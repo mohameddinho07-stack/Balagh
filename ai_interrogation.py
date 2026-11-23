@@ -16,7 +16,7 @@ class AIUnavailable(Exception):
 
 def build_request(case, state, question, suspect_id="nadine"):
     suspect = next(s for s in case["characters"] if s["id"] == suspect_id)
-    topics = [{"id": q["id"], "question": q["question"], "covers": {"a1": "relationship with Nader, friendship, novel rights, dispute", "a2": "whereabouts, restaurant, alibi, bill, waiter", "a3": "blackmail, extortion, money, secret", "l1": "relationship with Nader, romance, nervousness", "l2": "whereabouts, party, piano, alibi, recording", "l3": "stopped watch, battery", "y1": "argument, anger, papers, conflict with Nader", "y2": "call ending versus death time, alibi contradiction", "y3": "woman voice during phone call, hospitality", "n1": "departure time, leaving hotel, ten oclock", "n2": "returning to hotel, second visit, lying about departure, visitor signature, serving cup", "n3": "cup analysis, contamination, evidence linking cup and visit", "n4": "threats, motive, private files, fear of Nader"}.get(q["id"], "")}
+    topics = [{"id": q["id"], "question": q["question"], "covers": q.get("covers") or {"a1": "relationship with Nader, friendship, novel rights, dispute", "a2": "whereabouts, restaurant, alibi, bill, waiter", "a3": "blackmail, extortion, money, secret", "l1": "relationship with Nader, romance, nervousness", "l2": "whereabouts, party, piano, alibi, recording", "l3": "stopped watch, battery", "y1": "argument, anger, papers, conflict with Nader", "y2": "call ending versus death time, alibi contradiction", "y3": "woman voice during phone call, hospitality", "n1": "departure time, leaving hotel, ten oclock", "n2": "returning to hotel, second visit, lying about departure, visitor signature, serving cup", "n3": "cup analysis, contamination, evidence linking cup and visit", "n4": "threats, motive, private files, fear of Nader"}.get(q["id"], "")}
               for q in available_questions(suspect, state["discovered"])]
     topics += [{"id": "identity", "question": "اسمك وشغلك إيه؟"},
                {"id": "repeat", "question": "كرر أو وضح آخر إجابة"},
@@ -68,6 +68,8 @@ def ask_suspect(case, state, suspect_id, question, api_key, selector=request_top
     question = question.strip()
     if not question or len(question) > 350:
         raise AIUnavailable("اكتب سؤال من حرف واحد لحد 350 حرف.")
+    if state.get("imported_dossier"):
+        raise AIUnavailable("ملف الحفظ بيكمّل بالأسئلة الجاهزة بس. تجربة AI متاحة في محاولة جديدة.")
     history = state.setdefault("ai_interviews", [])
     if len(history) >= MAX_TURNS:
         raise AIUnavailable("وصلت لحد التجربة: 20 سؤال AI في المحاولة. تقدر تكمّل بالأسئلة الجاهزة.")
