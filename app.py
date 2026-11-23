@@ -62,13 +62,32 @@ if st.session_state.case:
 
         for suspect in case["suspects"]:
 
-            st.info(
-                f"""
-**{suspect['name']}**
+            with st.expander(f"🕵️ {suspect['name']}"):
 
-{suspect['job']}
+                st.write(f"**المهنة:** {suspect['job']}")
+                st.write(f"**العمر:** {suspect['age']}")
+
+                if st.button(
+                    f"🎤 استجواب {suspect['name']}",
+                    key=f"ask_{suspect['name']}"
+                ):
+
+                    st.info(
+                        f"""
+👤 الاسم: {suspect['name']}
+
+💼 المهنة: {suspect['job']}
+
+📝 الإفادة الأولية:
+
+أنا {suspect['name']}.
+
+جاوبت على كل أسئلة الشرطة،
+ومش شايف إن ليا علاقة مباشرة بالجريمة.
+
+لكن واضح إن في ناس كتير مخبية حاجات.
 """
-            )
+                    )
 
     st.markdown("---")
 
