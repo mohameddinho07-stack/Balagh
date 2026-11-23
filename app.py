@@ -3,52 +3,63 @@ from game_engine import generate_case
 
 st.set_page_config(
     page_title="بلاغ",
-    page_icon="🚨"
+    page_icon="🚨",
+    layout="wide"
 )
 
 st.title("🚨 بلاغ")
-st.write("وصل بلاغ... والحقيقة مستخبية.")
+st.markdown("### وصل بلاغ... والحقيقة مستخبية.")
 
 if "case" not in st.session_state:
     st.session_state.case = None
 
-if st.button("استلام بلاغ جديد"):
+if st.button("استلام بلاغ جديد 🚔"):
     st.session_state.case = generate_case()
 
 if st.session_state.case:
 
     case = st.session_state.case
 
-    st.subheader("📋 بيانات البلاغ")
+    st.markdown("---")
 
-    st.write(f"نوع البلاغ: {case['crime']}")
-    st.write(f"المكان: {case['location']}")
+    st.subheader("📄 تفاصيل البلاغ")
 
-    st.subheader("👥 المشتبه بهم")
-
-    for suspect in case["suspects"]:
-        st.write(f"- {suspect}")
-
-    st.subheader("🔍 الأدلة")
-
-    for clue in case["clues"]:
-        st.info(clue)
-
-    selected = st.selectbox(
-        "من المتهم الرئيسي؟",
-        case["suspects"]
+    st.write(
+        f"تم العثور على **{case['victim']}** داخل **{case['location']}** في ظروف غامضة."
     )
 
-    if st.button("إحالة للنيابة"):
+    st.markdown("---")
 
-        if selected == case["killer"]:
+    st.subheader("🕵️ المشتبه بهم")
 
-            st.success(
-                f"✅ تم حل القضية\n\nالمتهم الحقيقي: {case['killer']}"
+    cols = st.columns(2)
+
+    for idx, suspect in enumerate(case["suspects"]):
+
+        with cols[idx % 2]:
+
+            st.info(
+                f"""
+**الاسم:** {suspect['name']}
+
+**العمر:** {suspect['age']} سنة
+
+**الوظيفة:** {suspect['job']}
+"""
             )
 
-        else:
+    st.markdown("---")
 
-            st.error(
-                f"❌ اتهام خاطئ\n\nالمتهم الحقيقي: {case['killer']}"
-            )
+    st.subheader("⚖️ قرار الاتهام")
+
+    suspect_names = [
+        s["name"]
+        for s in case["suspects"]
+    ]
+
+    selected = st.selectbox(
+        "اختر المتهم الرئيسي",
+        suspect_names
+    )
+
+    if st.button("إحالة للنيابة
