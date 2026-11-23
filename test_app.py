@@ -8,7 +8,7 @@ def started():
 class AppFlowTests(unittest.TestCase):
     def test_playable_flows(self):
         a=started()
-        a.button(key='inspect_E03').click().run()
+        a.session_state['investigation']['discovered'].append('E03');a.run()
         next(x for x in a.selectbox if x.label=='مين اللي عملها؟').select('يوسف بيومي')
         a.multiselect[0].select('E03')
         a.checkbox[0].check()
@@ -23,7 +23,7 @@ class AppFlowTests(unittest.TestCase):
         assert 'detective_notes' not in a.session_state
         
         a=started()
-        for e in ['E06','E07','E08']: a.button(key='inspect_'+e).click().run()
+        a.session_state['investigation']['discovered'].extend(['E06','E07','E08']);a.run()
         next(x for x in a.selectbox if x.label=='مين اللي عملها؟').select('نادين مراد')
         for e in ['E06','E07','E08']: a.multiselect[0].select(e)
         a.checkbox[0].check()
@@ -37,6 +37,14 @@ class AppFlowTests(unittest.TestCase):
         assert all(x.label=='ارجع لاختيار القضية' for x in a.button)
         print('UI PASS: wrong accusation locks without revealing; opt-in reveal; clean reset; complete evidence win; room configuration safe fallback')
 
+
+    def test_no_duplicate_legacy_presentations(self):
+        a=started()
+        assert not any('نسخة نصية' in x.value or 'نسمع أقوالهم' in x.value for x in a.subheader)
+        assert not any(x.key.startswith('inspect_') for x in a.button if x.key)
+        assert any('اسأل بطريقتك' in x.value for x in a.subheader)
+        assert any('نوتة التحقيق' in x.value for x in a.subheader)
+        assert any('مين المتهم' in x.value for x in a.subheader)
 
     def test_ai_has_equal_choices_and_no_default(self):
         from unittest.mock import patch
