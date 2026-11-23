@@ -93,7 +93,7 @@ if st.session_state.case:
 
     if st.button("⚖️ توجيه الاتهام"):
 
-        if selected == case["killer"]:
+        if selected == case["truth"]["killer"]:
 
             st.success(
                 f"""
