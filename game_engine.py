@@ -3,7 +3,8 @@ import random
 from data import (
     CHARACTERS,
     LOCATIONS,
-    VICTIMS
+    VICTIMS,
+    INVESTIGATION_RESULTS
 )
 
 def generate_case():
@@ -22,3 +23,12 @@ def generate_case():
         "suspects": suspects,
         "killer": killer
     }
+
+def investigate(action):
+
+    if action in INVESTIGATION_RESULTS:
+        return random.choice(
+            INVESTIGATION_RESULTS[action]
+        )
+
+    return "لا توجد معلومات جديدة."
