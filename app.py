@@ -39,9 +39,8 @@ if phase == 'choose':
 if st.button('ارجع لاختيار القضية'):
     st.session_state.entry_phase = 'choose'
     st.rerun()
-st.title("بلاغ")
-st.caption("حكاية جريمة من خيالنا • جرّب تلعب لوحدك • اسأل كل الشخصيات بطريقتك أو بالأسئلة الجاهزة")
-mode = st.radio("تحب تلعب إزاي؟", ["🔍 العب لوحدك", "🎮 العب مع صحابك", "🏁 سباق محققين"], horizontal=True)
+with st.expander("طريقة اللعب: فردي، مع صحابك، أو سباق"):
+    mode = st.radio("تحب تلعب إزاي؟", ["🔍 العب لوحدك", "🎮 العب مع صحابك", "🏁 سباق محققين"], horizontal=True)
 room_mode = mode != "🔍 العب لوحدك"
 race_mode = mode == "🏁 سباق محققين"
 room = None
@@ -169,7 +168,8 @@ state = st.session_state.investigation
 public = case["public"]
 st.subheader(f"بلاغ {case['id']} • {public['title']}")
 st.caption(f"المكان: {public['location']} | اللي اتقتل: {public['victim']}")
-st.info(public["story"])
+with st.expander("اقرا البلاغ وحكاية اللي حصل"):
+    st.info(public["story"])
 # Each case owns its scene and public evidence. No truth or credentials cross to the browser.
 crime_scene = components.declare_component('balagh_crime', path=str(Path(__file__).parent/'crime_frontend'/'crime_frontend'))
 scene_scope = '|'.join([case['id'], mode, str(room.get('me','')) if room_mode else 'solo'])
