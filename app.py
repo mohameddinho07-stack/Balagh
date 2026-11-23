@@ -1,6 +1,6 @@
 import streamlit as st
 from game_engine import (generate_case, new_investigation, evidence_cards,
-                         available_questions, record_answer, finish_investigation)
+                         available_questions, record_answer, finish_investigation, case_catalog, available_evidence, inspect_evidence, link_evidence)
 
 st.set_page_config(page_title="بلاغ", page_icon="🚨", layout="wide")
 st.markdown("""<style>
@@ -31,24 +31,60 @@ if phase == 'landing':
         st.session_state.entry_phase = 'choose'
         st.rerun()
     st.stop()
+def archive_solo():
+    current=st.session_state.get('case')
+    if current and not st.session_state.get('room_token'):
+        st.session_state.setdefault('case_saves',{})[current['id']] = {
+            'case':current,'state':st.session_state.get('investigation'),
+            'notes':st.session_state.get('detective_notes','')}
+
 if phase == 'choose':
-    st.title('اختار القضية')
-    st.caption('المتاح دلوقتي قضية واحدة كاملة. مش هنحط ملفات جديدة قبل ما تبقى قابلة للعب.')
-    with st.container(border=True):
-        st.subheader('بلاغ 001 • الغرفة المغلقة')
-        st.write('فندق النيل الملكي. باب متأمّن من جوّه، وأقوال محتاجة تتراجع على الدليل.')
-        if st.button('افتح ملف الغرفة المغلقة', type='primary'):
-            st.session_state.entry_phase = 'game'
-            if not st.session_state.get('case'):
-                st.session_state.case = generate_case()
-                st.session_state.investigation = new_investigation()
-            st.rerun()
+    with st.expander('عندك ملف حفظ؟ كمّل من مكانك'):
+        upload=st.file_uploader('ملف حفظ بلاغ للفردي، مش مفتاح أوضة',type=['json'],max_upload_size=1)
+        if st.button('افتح ملف الحفظ',disabled=upload is None):
+            try:
+                from dossier import import_dossier
+                c,saved_state,saved_notes=import_dossier(upload.getvalue())
+                st.session_state.case=c;st.session_state.investigation=saved_state
+                st.session_state.detective_notes=saved_notes;st.session_state.entry_phase='game'
+                for k in ['mode_choice','previous_mode','ai_suspect','focus_person','solo_snapshot','last_scene_nonce','link_feedback']:
+                    st.session_state.pop(k,None)
+                st.rerun()
+            except (ValueError,TypeError) as e:st.warning(str(e))
+    st.title('اختار البلاغ')
+    st.caption('٣ حكايات من خيالنا. كل واحدة مكان، وناس، وحقيقة مختلفة. اختار، وافتح عينك.')
+    for item in case_catalog():
+        with st.container(border=True):
+            st.subheader('بلاغ '+item['id']+' • '+item['title'])
+            st.write(item['location'])
+            st.caption(item['tagline']+' | '+item['difficulty']+' | '+item['duration'])
+            saved=st.session_state.get('case_saves',{}).get(item['id'])
+            if saved and saved.get('state'):
+                ps=saved['state'];st.caption(('اتقفلت القضية' if ps['finished'] else 'تحقيق محفوظ في الجلسة')+' · '+str(len(ps['discovered']))+' أدلة · '+str(len(ps['interviews']))+' ردود')
+            saved=st.session_state.get('case_saves',{}).get(item['id'])
+            if st.button(('كمّل التحقيق' if saved else 'افتح المحضر')+' · '+item['title'], key='open_case_'+item['id'], type='primary'):
+                saved=st.session_state.get('case_saves',{}).get(item['id'])
+                st.session_state.case = saved['case'] if saved else generate_case(item['id'])
+                st.session_state.investigation = saved['state'] if saved else new_investigation()
+                st.session_state.detective_notes = saved.get('notes','') if saved else ''
+                st.session_state.entry_phase='game'
+                for k in ['previous_mode','mode_choice','ai_suspect','focus_person','solo_snapshot','last_scene_nonce','link_feedback']:
+                    st.session_state.pop(k,None)
+                st.rerun()
+    st.caption('الأماكن الحقيقية إلهام للأجواء بس. المعسكر والمركب وكل الجرائم والشخصيات مؤلّفة. دي مش معلومات سفر أو تصريح زيارة.')
     st.stop()
 if st.button('ارجع لاختيار القضية'):
+    archive_solo()
+    if st.session_state.get('room_token'):
+        st.warning('اخرج من الأوضة على الجهاز ده الأول عشان ترجع لاختيار قضية من غير خلط.')
+        st.stop()
     st.session_state.entry_phase = 'choose'
     st.rerun()
+selected_case_id=st.session_state.get('case',{}).get('id','001') if st.session_state.get('case') else '001'
 with st.expander("طريقة اللعب: فردي، مع صحابك، أو سباق"):
-    mode = st.radio("تحب تلعب إزاي؟", ["🔍 العب لوحدك", "🎮 العب مع صحابك", "🏁 سباق محققين"], horizontal=True)
+    if selected_case_id!='001':
+        st.caption('القضية دي فردي دلوقتي. التعاوني والسباق شغالين في قضية الفندق بس، لحد ما قواعد السيرفر تتختبر للقضايا الجديدة.')
+    mode = st.radio("تحب تلعب إزاي؟", ["🔍 العب لوحدك", "🎮 العب مع صحابك", "🏁 سباق محققين"], horizontal=True, key='mode_choice', disabled=selected_case_id!='001')
 room_mode = mode != "🔍 العب لوحدك"
 race_mode = mode == "🏁 سباق محققين"
 room = None
@@ -180,10 +216,10 @@ with st.expander("اقرا البلاغ وحكاية اللي حصل"):
     st.info(public["story"])
 # Each case owns its scene and public evidence. No truth or credentials cross to the browser.
 crime_scene = components.declare_component('balagh_crime', path=str(Path(__file__).parent/'crime_frontend'/'crime_frontend'))
-scene_scope = '|'.join([case['id'], mode, str(room.get('me','')) if room_mode else 'solo'])
-scene_event = crime_scene(cards=evidence_cards(case), discovered=state['discovered'],
-    finished=state['finished'], scope=scene_scope, location=public['location'],
-    scene_id='hotel_suite_001', people=[{'id':c['id'],'name':c['name'],'job':c['job'],'info':c['public_info'],
+scene_scope = '|'.join([case['id'], mode, str(room.get('me','')) if room_mode else state.setdefault('attempt_id',__import__('uuid').uuid4().hex)])
+scene_event = crime_scene(cards=available_evidence(case,state), locked_cards=[{'id':e['id'],'title':e['title'],'requires':e.get('requires',[])} for e in evidence_cards(case) if e not in available_evidence(case,state)], total=len(evidence_cards(case)), discovered=state['discovered'],
+    finished=state['finished'], link_feedback=st.session_state.get('link_feedback',''), allow_links=not room_mode, scope=scene_scope, location=public['location'],
+    scene_id=case.get('scene','hotel'), reasoning=[{'id':x['id'],'title':x['title'],'text':x['text']} for x in case.get('reasoning',[]) if x['id'] in state.get('deductions',[])], deductions=state.get('deductions',[]), case_title=public['title'], victim=public['victim'], story=public['story'], people=[{'id':c['id'],'name':c['name'],'job':c['job'],'info':c['public_info'],
         'questions':[{'id':q['id'],'question':q['question']} for q in available_questions(c,state['discovered'])],
         'locked':len(c['interviews'])-len(available_questions(c,state['discovered'])),
         'answers':[a for a in state['interviews'] if a['suspect']==c['name']]} for c in case['characters']], key='crime_scene_'+scene_scope, default=None)
@@ -193,6 +229,13 @@ if isinstance(scene_event, dict) and scene_event.get('nonce') != st.session_stat
     person = scene_event.get('person')
     if scene_event.get('scope') == scene_scope and person in {c['id'] for c in case['characters']}:
         st.session_state.focus_person = person
+    selected_links=scene_event.get('link')
+    if scene_event.get('scope')==scene_scope and isinstance(selected_links,list) and not state['finished'] and not room_mode:
+        try:
+            found=link_evidence(case,state,selected_links)
+            st.session_state.link_feedback=found['text'] if found else 'الربط ده لسه ما يثبتش نتيجة لوحده. جرّب تقارن وقت أو رواية بأكتر من مصدر.'
+            st.rerun()
+        except ValueError as e:st.warning(str(e))
     topic = scene_event.get('topic')
     if scene_event.get('scope') == scene_scope and topic and not state['finished']:
         suspect = next((c for c in case['characters'] if c['id']==person),None)
@@ -202,15 +245,18 @@ if isinstance(scene_event, dict) and scene_event.get('nonce') != st.session_stat
                 record_answer(case,state,person,topic)
             st.rerun()
     if (scene_event.get('scope') == scene_scope and not state['finished']
-            and eid in {e['id'] for e in evidence_cards(case)} and eid not in state['discovered']):
+            and eid in {e['id'] for e in available_evidence(case,state)} and eid not in state['discovered']):
         # Room validation and revision checks run before any local change.
         persist_room('inspect', {'evidence':eid})
         if not room_mode:
-            state['discovered'].append(eid)
+            inspect_evidence(case,state,eid)
         st.rerun()
 
 if state["finished"]:
     result = state["result"]
+    st.subheader('محضر قفل القضية')
+    st.caption('مش المهم الاسم بس، المهم إزاي وصلت له.')
+    st.write('راجعت '+str(len(state['discovered']))+' أدلة، وسجلت '+str(len(state['interviews']))+' ردود، وخدت '+str(state['hints_used'])+' تلميحات.')
     if result["success"]:
         st.success("تمام يا حضرة الظابط، وصلت للي عملها والأدلة ساندت كلامك. المحاولة دي خلصت.")
     elif result["killer_correct"]:
@@ -221,11 +267,25 @@ if state["finished"]:
     if st.checkbox("ورّيني الحل وفهّمني الأدلة", key="reveal_solution"):
         st.subheader(f"الحل: {case['truth']['killer']}")
         st.write(case["truth"]["explanation"])
+        for e in evidence_cards(case):
+            if e['id'] in case['truth']['required_evidence']:
+                st.markdown('**'+e['id']+' · '+e['title']+'**')
+                st.write(e['text'])
     if st.button("نجرّب من الأول" if not room_mode else "سيب الأوضة وابدأ واحدة جديدة", type="primary"):
-        for key in list(st.session_state):
-            del st.session_state[key]
+        if not room_mode:
+            st.session_state.investigation=new_investigation()
+            st.session_state.detective_notes=''
+            st.session_state.setdefault('case_saves',{}).pop(case['id'],None)
+            st.session_state.pop('reveal_solution',None)
+        else:
+            st.session_state.clear()
         st.rerun()
 
+with st.expander('إزاي تمسك البلاغ؟'):
+    st.write('١. افتح المكان واقرا الأدلة المتاحة. دوس «فحصت الدليل ده» عشان المحضر يسجّلها.')
+    st.write('٢. بعض الملفات مستنية أدلة قبلها. المطلوب مكتوب على الملف المقفول.')
+    st.write('٣. اسمع كل واحد، وارجع واجهه لما دليل جديد يفتح سؤال. حط دليلين أو أكتر على ترابيزة الربط.')
+    st.write('٤. نوتتك ليك. التلميحات تساعد من غير ما تختار مكانك. قرار الاتهام النهائي واحد في المحاولة، فراجع السبب والدليل.')
 a, b, c = st.columns(3)
 a.metric("أدلة بصّيت عليها", f"{len(state['discovered'])}/{len(evidence_cards(case))}")
 b.metric("ردود اتسجّلت", len(state["interviews"]))
@@ -245,7 +305,9 @@ try:
     groq_key = st.secrets.get("GROQ_API_KEY", "")
 except Exception:
     groq_key = ""
-if not groq_key:
+if state.get("imported_dossier"):
+    st.info("ملف الحفظ بيكمّل بالأسئلة الجاهزة بس. AI متاح في محاولة جديدة، عشان ما نعيدش حدوده مع كل تحميل.")
+elif not groq_key:
     st.info("ربط AI مش جاهز على السيرفر دلوقتي. تقدر تكمّل بالأسئلة الجاهزة.")
 else:
     from ai_interrogation import ask_suspect, AIUnavailable
@@ -271,6 +333,11 @@ else:
             st.write(turn.get("suspect", "نادين مراد") + ": " + turn["answer"])
 
 st.subheader("📓 نوتة التحقيق")
+if not room_mode:
+    with st.expander('احفظ التحقيق وكمّل بعدين'):
+        from dossier import export_dossier
+        st.caption('حفظ الفردي داخل الجلسة بس. نزّل ملفك قبل ما تقفل. الملف فيه نوتتك وتقدّمك، ما تشاركهوش لو عايز تحافظ على أسرارك. ده مش إثبات نتيجة ولا ينفع للسباق. سجل AI الحر مش بينتقل. بعد تحميل الملف، التحقيق بيكمّل بالأسئلة الجاهزة بس، وتجربة AI مش بتتفتح من جديد بالتحميل.')
+        st.download_button('نزّل ملف حفظ التحقيق',export_dossier(case,state,st.session_state.get('detective_notes','')),file_name='balagh-'+case['id']+'.json',mime='application/json')
 if room_mode:
     notes_key = 'room_notes_' + str(room['me'])
     if notes_key not in st.session_state:
@@ -283,14 +350,14 @@ if room_mode:
         except RoomError as e:
             st.warning(str(e))
 else:
-    st.text_area("اكتب اللي واخد بالك منه هنا، هيفضل معاك طول ما جلسة اللعب شغّالة بس", key="detective_notes", height=150)
+    st.text_area("اكتب اللي واخد بالك منه هنا، هيفضل معاك طول ما جلسة اللعب شغّالة بس", key="detective_notes", height=150, max_chars=6000)
 if not state["finished"]:
     if st.button("💡 ادّيني طرف خيط من غير حرق"):
         state["hints_used"] += 1
         persist_room('hint')
         if room_mode: st.rerun()
     if state["hints_used"]:
-        st.info("خلي بالك، وقت دخول اللي عملها مش لازم يبقى هو وقت الموت. شوف حكاية «أنا مشيت» دي صح ولا لأ، واربط الزيارة بالكوباية والسبب. البصمة لوحدها أو الخناقة لوحدها مش كفاية.")
+        st.info(case.get('hints',['خلي بالك، وقت دخول اللي عملها مش لازم يبقى هو وقت الموت. راجع الزيارة والكوباية والسبب. البصمة لوحدها أو الخناقة لوحدها مش كفاية.'])[min(state['hints_used']-1,len(case.get('hints',[0]))-1)])
     st.subheader("⚖️ مين المتهم وإيه دليلك؟")
     st.caption("اتهام نهائي واحد، لو المتهم أو الأدلة غلط هتخرج من السباق. الفوز محتاج ربط الزيارة بالكوباية والدافع." if race_mode else "اقتراحك لازم صاحبك يوافق عليه عشان التحقيق يقفل." if room_mode else "قبل ما تثبّت الاتهام، راجع نفسك: مين عملها؟ وإيه اللي يثبت كلامك؟ اختار الأدلة اللي بتربط زيارته باللي حصل وسببه. الشك لوحده مش كفاية. ليك قرار أخير واحد في المحاولة.")
     cards = {e["id"]: e for e in evidence_cards(case)}
@@ -326,5 +393,8 @@ if room_mode and not race_mode and room['proposal'] and not state['finished']:
             st.rerun()
         except RoomError as e:
             st.warning(str(e))
+
+if not room_mode:
+    archive_solo()
 
 st.caption("الفردي بيتحفظ طول الجلسة بس. الأوضة بتحفظ التحقيق والنوتة الخاصة على السيرفر، والرجوع بمفتاحك الشخصي. المجاني ليه حدود وممكن يتوقف مع قلة الاستخدام.")
