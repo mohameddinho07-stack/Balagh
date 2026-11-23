@@ -249,25 +249,6 @@ for evidence in evidence_cards(case):
             persist_room('inspect', {'evidence':evidence['id']})
             st.rerun()
 
-st.subheader("🕵️ نسمع أقوالهم")
-for suspect in case["characters"]:
-    with st.expander(suspect["name"], expanded=False):
-        st.caption(f"{suspect['job']} • {suspect['age']} سنة")
-        st.write(suspect["public_info"])
-        unlocked = available_questions(suspect, state["discovered"])
-        for question in unlocked:
-            if st.button(question["question"], key=f"ask_{question['id']}", disabled=state["finished"]):
-                record_answer(case, state, suspect["id"], question["id"])
-                persist_room('interview', {'suspect':suspect['id'],'topic':question['id']})
-                st.rerun()
-        locked = len(suspect["interviews"]) - len(unlocked)
-        if locked:
-            st.caption(f"أسئلة مواجهة لسه مقفولة: {locked}. بصّ على أدلة تانية عشان تفتحها.")
-        for entry in state["interviews"]:
-            if entry["suspect"] == suspect["name"]:
-                st.markdown(f"**س: {entry['question']}**")
-                st.write(f"ج: {entry['answer']}")
-
 st.subheader("💬 اسأل بطريقتك، تجربة AI")
 st.caption("AI من Groq بيفهم سؤالك وسياق آخر كلامكم. الرد نفسه من كلام القضية المكتوب، عشان الحقيقة والأدلة ما يتغيّروش. لسه مش حوار مولّد بحرية.")
 st.warning("سؤالك وآخر 4 أسئلة بيتبعتوا لـ Groq. ما تكتبش بيانات شخصية أو أسرار. لو الحد المجاني خلص، التجربة بتقف من غير دفع، والأسئلة الجاهزة تفضل شغّالة.")
@@ -299,13 +280,6 @@ else:
         with st.container(border=True):
             st.text("إنت: " + turn["question"])
             st.write(turn.get("suspect", "نادين مراد") + ": " + turn["answer"])
-
-with st.expander("🗂️ الناس قالت إيه؟", expanded=False):
-    if not state["interviews"]:
-        st.write("لسه ما سألتش حد.")
-    for entry in state["interviews"]:
-        st.write(f"{entry['suspect']} | {entry['question']}")
-        st.write(entry["answer"])
 
 st.subheader("📓 نوتة التحقيق")
 if room_mode:
