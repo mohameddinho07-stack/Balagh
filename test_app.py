@@ -19,8 +19,9 @@ class AppFlowTests(unittest.TestCase):
         a.checkbox(key='reveal_solution').check().run()
         assert any('الحل: نادين' in t.value for t in a.subheader)
         next(b for b in a.button if b.label=='نجرّب من الأول').click().run()
-        assert 'case' not in a.session_state
-        assert 'detective_notes' not in a.session_state
+        assert a.session_state['case']['id']=='001'
+        assert not a.session_state['investigation']['discovered']
+        assert not a.session_state.get('detective_notes','')
         
         a=started()
         a.session_state['investigation']['discovered'].extend(['E06','E07','E08']);a.run()
