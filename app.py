@@ -91,27 +91,29 @@ if st.session_state.case:
         suspect_names
     )
 
-    if st.button("⚖️ توجيه الاتهام"):
 
-        if selected == case["truth"]["killer"]:
+if st.button("⚖️ توجيه الاتهام"):
 
-    st.success(
-        """
+    if selected == case["truth"]["killer"]:
+
+        st.success(
+            """
 ✅ اتهام صحيح
 
 أحسنت أيها المحقق.
+
 لقد تمكنت من كشف الحقيقة.
 """
-    )
+        )
 
-else:
+    else:
 
-    st.error(
-        f"""
+        st.error(
+            f"""
 ❌ اتهام خاطئ
 
 المتهم الحقيقي:
 
 {case['truth']['killer']}
 """
-    )
+        )
