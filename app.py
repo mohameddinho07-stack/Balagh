@@ -12,7 +12,7 @@ h1, h2, h3, [data-testid="stCaptionContainer"] {text-align:right;direction:rtl;}
 [data-testid="stMainBlockContainer"] {max-width:1100px;}
 </style>""", unsafe_allow_html=True)
 st.title("بلاغ")
-st.caption("حكاية جريمة من خيالنا • جرّب تلعب لوحدك • الردود مكتوبة، لسه مفيش AI ولا خدمات برّه اللعبة")
+st.caption("حكاية جريمة من خيالنا • جرّب تلعب لوحدك • تجربة AI مع نادين، وباقي الشخصيات بأسئلة جاهزة")
 mode = st.radio("تحب تلعب إزاي؟", ["🔍 العب لوحدك", "🎮 العب مع صحابك"], horizontal=True)
 if mode == "🎮 العب مع صحابك":
     st.info("اللعب مع صحابك لسه مش شغّال. مفيش أوض ولا لعيبة متوصلين ببعض دلوقتي. اختار تلعب لوحدك وجرّب القضية.")
@@ -93,6 +93,34 @@ for suspect in case["characters"]:
                 st.markdown(f"**س: {entry['question']}**")
                 st.write(f"ج: {entry['answer']}")
 
+st.subheader("💬 اسأل نادين بطريقتك، تجربة AI")
+st.caption("AI من Groq بيفهم سؤالك وسياق آخر كلامكم. الرد نفسه من كلام القضية المكتوب، عشان الحقيقة والأدلة ما يتغيّروش. لسه مش حوار مولّد بحرية.")
+st.warning("سؤالك وآخر 4 أسئلة بيتبعتوا لـ Groq. ما تكتبش بيانات شخصية أو أسرار. لو الحد المجاني خلص، التجربة بتقف من غير دفع، والأسئلة الجاهزة تفضل شغّالة.")
+try:
+    groq_key = st.secrets.get("GROQ_API_KEY", "")
+except Exception:
+    groq_key = ""
+if not groq_key:
+    st.info("ربط AI مش جاهز على السيرفر دلوقتي. تقدر تكمّل بالأسئلة الجاهزة.")
+else:
+    from ai_interrogation import ask_nadine, AIUnavailable
+    st.caption(f"أسئلة AI في المحاولة: {len(state.get('ai_interviews', []))}/20")
+    with st.form("nadine_ai", clear_on_submit=True):
+        free_question = st.text_input("هتسأل نادين إيه؟", max_chars=350,
+                                      placeholder="إنتي سيبتي الفندق إمتى؟")
+        ai_sent = st.form_submit_button("اسأل نادين", disabled=state["finished"])
+    if ai_sent:
+        try:
+            with st.spinner("نادين بتسمع سؤالك..."):
+                ask_nadine(case, state, free_question, groq_key)
+            st.rerun()
+        except AIUnavailable as error:
+            st.warning(str(error))
+    for turn in state.get("ai_interviews", []):
+        with st.container(border=True):
+            st.text("إنت: " + turn["question"])
+            st.write("نادين: " + turn["answer"])
+
 with st.expander("🗂️ الناس قالت إيه؟", expanded=False):
     if not state["interviews"]:
         st.write("لسه ما سألتش حد.")
@@ -122,4 +150,4 @@ if not state["finished"]:
             finish_investigation(case, state, selected, evidence_ids)
             st.rerun()
 
-st.caption("اللعبة فاكرة اللي عملته طول جلسة اللعب دي بس، مش بتحفظه في حساب. لو الاتصال اتجدد أو الجلسة قفلت ممكن يضيع. ولسه مفيش AI ولا أوض تلعب فيها مع صحابك.")
+st.caption("اللعبة فاكرة اللي عملته طول جلسة اللعب دي بس، مش بتحفظه في حساب. لو الاتصال اتجدد أو الجلسة قفلت ممكن يضيع. تجربة AI متاحة مع نادين بس، ولسه مفيش أوض تلعب فيها مع صحابك.")
