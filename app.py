@@ -7,6 +7,7 @@ st.markdown("""<style>
 [data-testid="stAppViewContainer"] {direction:rtl;text-align:right;}
 [data-testid="stSidebar"] {direction:rtl;}
 .stButton button, .stSelectbox, .stMultiSelect, textarea {direction:rtl;}
+[data-testid="stMarkdownContainer"] p, .stButton button p {direction:rtl;unicode-bidi:plaintext;text-align:right;}
 h1, h2, h3, [data-testid="stCaptionContainer"] {text-align:right;direction:rtl;}
 [data-testid="stMainBlockContainer"] {max-width:1100px;}
 </style>""", unsafe_allow_html=True)
@@ -59,7 +60,10 @@ c.metric("تلميحات خُدتها", state["hints_used"])
 
 with st.expander("🕒 إيه حصل وإمتى؟"):
     for item in public["timeline"]:
-        st.write(item)
+        time_label, event = item.split(" • ", 1)
+        with st.container(border=True):
+            st.markdown(f"**{time_label}**")
+            st.write(event)
 
 st.subheader("📂 الأدلة اللي في المحضر")
 st.caption("افتح الدليل واقراه، وبعدها دوس «بصّيت على الدليل ده». كده هيتسجّل عندك ويفتحلك أسئلة تواجه بيها الناس.")
