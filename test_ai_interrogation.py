@@ -52,3 +52,47 @@ class AITests(unittest.TestCase):
         with self.assertRaises(AIUnavailable):
             ask_nadine(self.case, self.state, 'سؤال', 'test', selector=fail, now=100)
         self.assertEqual(self.state['ai_interviews'], [])
+
+class AllSuspectsTests(unittest.TestCase):
+    def test_every_suspect_really_answers(self):
+        from ai_interrogation import ask_suspect
+        case = generate_case()
+        for suspect in case['characters']:
+            with self.subTest(suspect=suspect['id']):
+                state = new_investigation()
+                first = suspect['interviews'][0]
+                turn = ask_suspect(case, state, suspect['id'], 'سؤال', 'test',
+                                   selector=lambda p,k: first['id'], now=100)
+                self.assertEqual(turn['answer'], first['answer'])
+                self.assertEqual(turn['suspect'], suspect['name'])
+                self.assertEqual(state['interviews'][0]['suspect'], suspect['name'])
+
+    def test_all_gates_and_other_suspect_topics(self):
+        from ai_interrogation import ask_suspect
+        case = generate_case()
+        for suspect in case['characters']:
+            state = new_investigation()
+            p = build_request(case, state, 'سؤال', suspect['id'])
+            allowed = p['response_format']['json_schema']['schema']['properties']['topic']['enum']
+            for other in case['characters']:
+                if other['id'] != suspect['id']:
+                    self.assertTrue(set(q['id'] for q in other['interviews']).isdisjoint(allowed))
+            for question in suspect['interviews']:
+                if question.get('requires'):
+                    self.assertNotIn(question['id'], allowed)
+                    state = new_investigation()
+                    state['discovered'] = question['requires']
+                    result = ask_suspect(case,state,suspect['id'],'سؤال','test',
+                                         selector=lambda p,k:question['id'],now=100)
+                    self.assertEqual(result['answer'], question['answer'])
+
+    def test_history_repeat_and_context_are_separate(self):
+        from ai_interrogation import ask_suspect
+        case = generate_case(); state = new_investigation()
+        a = ask_suspect(case,state,'aser','سؤال آسر','test',selector=lambda p,k:'a1',now=100)
+        b = ask_suspect(case,state,'layla','سؤال ليلى','test',selector=lambda p,k:'l1',now=110)
+        text = str(build_request(case,state,'كرر','aser'))
+        self.assertIn('سؤال آسر',text); self.assertNotIn('سؤال ليلى',text)
+        repeated = ask_suspect(case,state,'aser','كرر','test',selector=lambda p,k:'repeat',now=120)
+        self.assertEqual(repeated['answer'], a['answer'])
+        self.assertNotEqual(repeated['answer'], b['answer'])
