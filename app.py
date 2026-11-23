@@ -40,11 +40,11 @@ if st.session_state.case:
 
             st.info(
                 f"""
-**الاسم:** {suspect['name']}
+الاسم: {suspect['name']}
 
-**العمر:** {suspect['age']} سنة
+العمر: {suspect['age']} سنة
 
-**الوظيفة:** {suspect['job']}
+الوظيفة: {suspect['job']}
 """
             )
 
@@ -52,14 +52,39 @@ if st.session_state.case:
 
     st.subheader("⚖️ قرار الاتهام")
 
-    suspect_names = [
-        s["name"]
-        for s in case["suspects"]
-    ]
+    suspect_names = [s["name"] for s in case["suspects"]]
 
     selected = st.selectbox(
         "اختر المتهم الرئيسي",
         suspect_names
     )
 
-    if st.button("إحالة للنيابة
+    if st.button("إحالة للنيابة"):
+
+        if selected == case["killer"]["name"]:
+
+            st.success(
+                f"""
+✅ تم حل القضية
+
+المتهم الحقيقي:
+{case['killer']['name']}
+
+الوظيفة:
+{case['killer']['job']}
+
+السر:
+{case['killer']['secret']}
+"""
+            )
+
+        else:
+
+            st.error(
+                f"""
+❌ اتهام خاطئ
+
+المتهم الحقيقي كان:
+{case['killer']['name']}
+"""
+            )
