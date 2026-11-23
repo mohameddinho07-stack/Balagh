@@ -22,7 +22,7 @@ if "case" not in st.session_state:
 
 if st.session_state.case is None:
     st.subheader("بلاغ 001 • الغرفة المغلقة")
-    st.write("قلّب في الأدلة، واسأل الأربع شخصيات، وشوف مين كلامه مش راكب. لما تتهم حد هتقفل المحاولة دي، والحل مش هيتحرق عليك إلا لو طلبت تشوفه بعدها.")
+    st.write("بص يا حضرة الظابط، قدامك بلاغ قتل وأربع أشخاص لازم تسمع منهم. امسك الملف واحدة واحدة، وراجع كل كلمة على الأدلة. مش عايزين اسم وخلاص، عايزين تعرف مين عملها وتقول دليلك إيه. ولما تثبّت اتهامك، المحاولة هتقفل. الحل مش هيتقالك إلا لو طلبته بعدها.")
     if st.button("🚔 يلا نحقق", type="primary"):
         st.session_state.case = generate_case()
         st.session_state.investigation = new_investigation()
@@ -38,7 +38,7 @@ st.info(public["story"])
 if state["finished"]:
     result = state["result"]
     if result["success"]:
-        st.success("جبتها! مسكت الفاعل وربطت الأدلة ببعض صح. المحاولة دي خلصت.")
+        st.success("تمام يا حضرة الظابط، وصلت للي عملها والأدلة ساندت كلامك. المحاولة دي خلصت.")
     elif result["killer_correct"]:
         st.warning("مسكت الفاعل، بس الأدلة اللي اخترتها لسه مش مكمّلة الحكاية. المحاولة دي خلصت؛ شوف الحل لو حابب أو جرّب من الأول.")
     else:
@@ -61,7 +61,7 @@ with st.expander("🕒 إيه حصل وإمتى؟"):
     for item in public["timeline"]:
         st.write(item)
 
-st.subheader("ملف الأدلة")
+st.subheader("📂 الأدلة اللي في المحضر")
 st.caption("افتح الدليل واقراه، وبعدها دوس «بصّيت على الدليل ده». كده هيتسجّل عندك ويفتحلك أسئلة تواجه بيها الناس.")
 for evidence in evidence_cards(case):
     inspected = evidence["id"] in state["discovered"]
@@ -71,7 +71,7 @@ for evidence in evidence_cards(case):
             state["discovered"].append(evidence["id"])
             st.rerun()
 
-st.subheader("🕵️ نسأل الناس دي")
+st.subheader("🕵️ نسمع أقوالهم")
 for suspect in case["characters"]:
     with st.expander(suspect["name"]):
         st.caption(f"{suspect['job']} • {suspect['age']} سنة")
@@ -96,21 +96,21 @@ with st.expander("🗂️ الناس قالت إيه؟", expanded=False):
         st.write(f"{entry['suspect']} | {entry['question']}")
         st.write(entry["answer"])
 
-st.subheader("📓 نوتة المحقق")
+st.subheader("📓 نوتة التحقيق")
 st.text_area("اكتب اللي واخد بالك منه هنا، هيفضل معاك طول ما جلسة اللعب شغّالة بس", key="detective_notes", height=150)
 if not state["finished"]:
     if st.button("💡 ادّيني طرف خيط من غير حرق"):
         state["hints_used"] += 1
     if state["hints_used"]:
         st.info("خلي بالك، وقت دخول اللي عملها مش لازم يبقى هو وقت الموت. شوف حكاية «أنا مشيت» دي صح ولا لأ، واربط الزيارة بالكوباية والسبب. البصمة لوحدها أو الخناقة لوحدها مش كفاية.")
-    st.subheader("⚖️ هتلبّسها لمين؟")
-    st.caption("ليك قرار أخير واحد في المحاولة. اختار اللي عملها، وحدد الأدلة اللي بتربط زيارته باللي حصل وسببه، مش أي حاجة تخلّيك تشك وخلاص.")
+    st.subheader("⚖️ مين المتهم وإيه دليلك؟")
+    st.caption("قبل ما تثبّت الاتهام، راجع نفسك: مين عملها؟ وإيه اللي يثبت كلامك؟ اختار الأدلة اللي بتربط زيارته باللي حصل وسببه. الشك لوحده مش كفاية. ليك قرار أخير واحد في المحاولة.")
     cards = {e["id"]: e for e in evidence_cards(case)}
     with st.form("accusation"):
         selected = st.selectbox("مين اللي عملها؟", [s["name"] for s in case["characters"]], index=None, placeholder="اختار حد")
         evidence_ids = st.multiselect("إيه الأدلة اللي بصّيت عليها وبتسند كلامك؟", state["discovered"], format_func=lambda x: f"{x} • {cards[x]['title']}")
         confirmed = st.checkbox("أيوه، ده قراري الأخير وعارف إن المحاولة هتقفل بعده")
-        submitted = st.form_submit_button("خلاص، ده اتهامي", type="primary")
+        submitted = st.form_submit_button("ثبّت الاتهام", type="primary")
     if submitted:
         if not confirmed or selected is None or not evidence_ids:
             st.warning("اختار حد ودليل واحد على الأقل، وعلّم إن ده قرارك الأخير.")
