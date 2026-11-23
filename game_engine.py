@@ -3,16 +3,25 @@ from data import CASE_001
 
 def generate_case():
 
+    public = CASE_001["public"]
+
     return {
-        "title": CASE_001["title"],
-        "story": CASE_001["story"],
-        "victim": CASE_001["victim"],
-        "location": CASE_001["location"],
-        "forensic_report": CASE_001["forensic_report"],
-        "camera_report": CASE_001["camera_report"],
-        "call_log": CASE_001["call_log"],
-        "witness_statement": CASE_001["witness_statement"],
-        "timeline": CASE_001["timeline"],
-        "suspects": CASE_001["suspects"],
-        "killer": CASE_001["killer"]
+        "title": public["title"],
+        "story": public["story"],
+        "victim": public["victim"],
+        "location": public["location"],
+        "forensic_report": public["forensic_report"],
+        "camera_report": public["camera_report"],
+        "call_log": public["call_log"],
+        "witness_statement": public["witness_statement"],
+        "timeline": public["timeline"],
+
+        # الشخصيات
+        "suspects": CASE_001["characters"],
+
+        # البيانات السرية (للاستخدام الداخلي فقط)
+        "truth": CASE_001["truth"],
+
+        # طبقات المفاجآت
+        "twist": CASE_001["twist"]
     }
