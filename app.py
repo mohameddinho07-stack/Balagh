@@ -111,6 +111,6 @@ if st.session_state.case:
 ❌ اتهام خاطئ
 
 المتهم الحقيقي:
-{case['killer']}
+case['truth']['killer']
 """
             )
