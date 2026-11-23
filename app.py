@@ -13,7 +13,7 @@ h1, h2, h3, [data-testid="stCaptionContainer"] {text-align:right;direction:rtl;}
 </style>""", unsafe_allow_html=True)
 from pathlib import Path
 import streamlit.components.v1 as components
-_entry_component = components.declare_component('balagh_entry', path=str(Path(__file__).parent/'entry_frontend'))
+_entry_component = components.declare_component('balagh_entry', path=str(Path(__file__).parent/'entry_frontend'/'entry_frontend'))
 phase = st.session_state.get('entry_phase', 'landing')
 entry_event = _entry_component(stage=phase, key='balagh_entry_persistent', default=None)
 if phase in ('landing','choose'):
