@@ -17,7 +17,7 @@ _entry_component = components.declare_component('balagh_entry', path=str(Path(__
 phase = st.session_state.get('entry_phase', 'landing')
 entry_event = _entry_component(stage=phase, key='balagh_entry_persistent', default=None)
 if phase in ('landing','choose'):
-    st.markdown('<style>[data-testid="stAppViewContainer"]{background:#101b19;color:#eee5cf;}header[data-testid="stHeader"]{background:#101b19;}[data-testid="stMainBlockContainer"]{padding-top:1.4rem;}[data-testid="stMainBlockContainer"] h1,[data-testid="stMainBlockContainer"] h3,[data-testid="stCaptionContainer"]{color:#e7d5ae;}</style>', unsafe_allow_html=True)
+    st.markdown('<style>[data-testid="stAppViewContainer"]{background:#101b19;color:#eee5cf;}header[data-testid="stHeader"]{background:#101b19;}[data-testid="stMainBlockContainer"]{padding-top:4.4rem;}[data-testid="stMainBlockContainer"] h1,[data-testid="stMainBlockContainer"] h3,[data-testid="stCaptionContainer"]{color:#e7d5ae;}</style>', unsafe_allow_html=True)
 if phase == 'landing':
     if entry_event == 'start':
         st.session_state.entry_phase = 'choose'
