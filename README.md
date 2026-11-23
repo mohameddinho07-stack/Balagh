@@ -66,3 +66,14 @@ python -m unittest -v
 `rooms.sql` ترقية إضافية للجداول الموجودة، من غير مسح بيانات. الجدولين مش متاحين مباشرة من Data API. المتاح بس وظيفة `balagh_room`، ومفاتيح اللاعبين مخزنة كبصمات SHA-256. مفتاح Supabase العام يفضل على السيرفر، ومفيش احتياج لمفتاح service_role. التحديثات بتستخدم revision عشان ما تدوسش على تغيير صاحبك. المزامنة باستعلام كل 5 ثواني والصفحة مفتوحة، مش WebSocket.
 
 لازم `SUPABASE_URL` و`SUPABASE_KEY` في Secrets. شغّل الترقية ثم اسمح بوظيفة `balagh_room` بس في Data API، من غير فتح الجداول أو إلغاء RLS. الخطة مجانية وقت الإعداد، وممكن تتوقف مع قلة الاستخدام أو نفاد الحدود. مفيش ترقية أو دفع تلقائي. الأوض محفوظة لحد حذفها إداريًا، ومفيش نسخ احتياطية تلقائية على المجاني. النسخة دي تجربة صغيرة، مش حماية كاملة ضد الإساءة أو منصة إنتاج.
+
+## Detective race
+Select سباق محققين. Two investigators work independently on the same case. The investigation waits until both join. Each gets one final accusation. A wrong suspect or incomplete evidence eliminates only that player. Both wrong means no winner. The first server-accepted correct suspect plus the authored required evidence wins; concurrent submissions are serialized by the database room lock. The other player sees the winner within the existing five-second refresh while open. There is no push notification after closing the app.
+
+Progress, interview/AI history and notes are private in races. Action-specific database operations validate clue IDs, interview gates and final evidence; arbitrary state commits are rejected in both modes. The AI classifier can choose a topic but cannot author case answers or determine the winner. Race AI limit is 20 questions per player. Existing co-op keeps shared history and the shared limit.
+
+This is the same fixed case whose solution is already in this repository and solo mode. It is a friends race, not a blind or cheat-proof contest. Inspection records show which clue buttons were used, not proof that someone read or reasoned about them. Recovery keys are bearer credentials. There is no automatic room expiry yet.
+
+Apply the additive `rooms.sql` migration before deploying this app version. It preserves existing co-op rooms but replaces their broad commit operation with validated actions. Only `balagh_room` is executable by client roles; the internal `balagh_action` helper and raw tables must remain inaccessible.
+
+Optional destructive-to-test-data-only integration checks: set `BALAGH_LIVE_TEST_CONFIG` to a private TOML file containing SUPABASE_URL/SUPABASE_KEY, then run `python test_race_live.py`. It creates test rooms with distinct Arabic test names, never use real-player names for cleanup. Never commit that config.
