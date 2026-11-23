@@ -31,6 +31,9 @@ if phase == 'choose':
         st.write('فندق النيل الملكي. باب متأمّن من جوّه، وأقوال محتاجة تتراجع على الدليل.')
         if st.button('افتح ملف الغرفة المغلقة', type='primary'):
             st.session_state.entry_phase = 'game'
+            if not st.session_state.get('case'):
+                st.session_state.case = generate_case()
+                st.session_state.investigation = new_investigation()
             st.rerun()
     st.stop()
 if st.button('ارجع لاختيار القضية'):
@@ -38,18 +41,7 @@ if st.button('ارجع لاختيار القضية'):
     st.rerun()
 st.title("بلاغ")
 st.caption("حكاية جريمة من خيالنا • جرّب تلعب لوحدك • اسأل كل الشخصيات بطريقتك أو بالأسئلة الجاهزة")
-mode = st.radio("تحب تلعب إزاي؟", ["🔍 العب لوحدك", "🎮 العب مع صحابك", "🏁 سباق محققين", "🕯️ أوضة 3D، تجربة"], horizontal=True)
-if mode == "🕯️ أوضة 3D، تجربة":
-    import json
-    from pathlib import Path
-    import streamlit.components.v1 as components
-    case = generate_case()
-    short = {'E01':'ملف المحضر','E03':'التليفون','E05':'الساعة','E07':'الكوباية الزرقا'}
-    cards = [dict(e, short=short[e['id']]) for e in evidence_cards(case) if e['id'] in short]
-    scene = Path(__file__).with_name('scene3d.html').read_text(encoding='utf-8')
-    components.html(scene.replace('__CASE_FILES__', json.dumps(cards, ensure_ascii=False)), height=1540, scrolling=True)
-    st.caption('دي عينة للأجواء والتفاعل، مش نقل للعبة كلها. ارجع لأي نمط فوق عشان تكمّل اللعب المحفوظ.')
-    st.stop()
+mode = st.radio("تحب تلعب إزاي؟", ["🔍 العب لوحدك", "🎮 العب مع صحابك", "🏁 سباق محققين"], horizontal=True)
 room_mode = mode != "🔍 العب لوحدك"
 race_mode = mode == "🏁 سباق محققين"
 room = None
@@ -178,6 +170,23 @@ public = case["public"]
 st.subheader(f"بلاغ {case['id']} • {public['title']}")
 st.caption(f"المكان: {public['location']} | اللي اتقتل: {public['victim']}")
 st.info(public["story"])
+# Each case owns its scene and public evidence. No truth or credentials cross to the browser.
+crime_scene = components.declare_component('balagh_crime', path=str(Path(__file__).parent/'crime_frontend'/'crime_frontend'))
+scene_scope = '|'.join([case['id'], mode, str(room.get('me','')) if room_mode else 'solo'])
+scene_event = crime_scene(cards=evidence_cards(case), discovered=state['discovered'],
+    finished=state['finished'], scope=scene_scope, location=public['location'],
+    scene_id='hotel_suite_001', key='crime_scene_'+scene_scope, default=None)
+if isinstance(scene_event, dict) and scene_event.get('nonce') != st.session_state.get('last_scene_nonce'):
+    st.session_state.last_scene_nonce = scene_event.get('nonce')
+    eid = scene_event.get('evidence')
+    if (scene_event.get('scope') == scene_scope and not state['finished']
+            and eid in {e['id'] for e in evidence_cards(case)} and eid not in state['discovered']):
+        # Room validation and revision checks run before any local change.
+        persist_room('inspect', {'evidence':eid})
+        if not room_mode:
+            state['discovered'].append(eid)
+        st.rerun()
+
 if state["finished"]:
     result = state["result"]
     if result["success"]:
@@ -207,7 +216,7 @@ with st.expander("🕒 إيه حصل وإمتى؟"):
             st.markdown(f"**{time_label}**")
             st.write(event)
 
-st.subheader("📂 الأدلة اللي في المحضر")
+st.subheader("📂 نسخة نصية من نفس أدلة الأوضة")
 st.caption("افتح الدليل واقراه، وبعدها دوس «بصّيت على الدليل ده». كده هيتسجّل عندك ويفتحلك أسئلة تواجه بيها الناس.")
 for evidence in evidence_cards(case):
     inspected = evidence["id"] in state["discovered"]
