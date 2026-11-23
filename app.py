@@ -9,17 +9,14 @@ st.set_page_config(
 
 st.title("🚨 بلاغ")
 
-st.markdown(
-    "## وصل بلاغ... والحقيقة مستخبية في التفاصيل"
-)
-
 if "case" not in st.session_state:
     st.session_state.case = None
 
 if "evidence" not in st.session_state:
     st.session_state.evidence = []
 
-if st.button("🚔 استلام بلاغ جديد"):
+if st.button("🚔 بدء التحقيق"):
+
     st.session_state.case = generate_case()
     st.session_state.evidence = []
 
@@ -27,50 +24,53 @@ if st.session_state.case:
 
     case = st.session_state.case
 
-    st.markdown("---")
-
-    st.markdown(f"""
+    st.markdown(
+        f"""
 # 🚨 بلاغ رقم 001
 
 ## القضية: {case['title']}
 
-📍 المكان: {case['location']}
+📍 الموقع: {case['location']}
 
 👤 الضحية: {case['victim']}
-""")
+"""
+    )
 
-    st.write(case["story"])
-
-    st.markdown("---")
-
-    st.subheader("📁 التسلسل الزمني")
-
-    for item in get_timeline():
-        st.write("•", item)
+    st.error(case["story"])
 
     st.markdown("---")
 
-    st.subheader("📁 الأدلة")
+    col1, col2 = st.columns([2, 1])
 
-    if st.button("🔍 فحص الجثة"):
-        st.session_state.evidence.append(
-            investigate("فحص الجثة")
-        )
+    with col1:
 
-    if st.button("📱 فحص الهاتف"):
-        st.session_state.evidence.append(
-            investigate("فحص الهاتف")
-        )
+        with st.expander("📁 تقرير الطب الشرعي"):
 
-    if st.button("📹 مراجعة الكاميرات"):
-        st.session_state.evidence.append(
-            investigate("مراجعة الكاميرات")
-        )
+            if st.button("تحليل الجثة"):
+                st.session_state.evidence.append(
+                    investigate("فحص الجثة")
+                )
 
-    if st.button("👤 استجواب الشاهد"):
-        st.session_state.evidence.append(
-            investigate("استجواب الشاهد")
-        )
+            st.write(
+                "الضحية توفي في ظروف غامضة ولا توجد إصابات ظاهرة."
+            )
 
-    for ev in st.session_state.evidence:
-        st.success(ev)
+        with st.expander("📁 كاميرات المراقبة"):
+
+            if st.button("مراجعة الكاميرات"):
+                st.session_state.evidence.append(
+                    investigate("مراجعة الكاميرات")
+                )
+
+            st.write(
+                "يوجد فقد في جزء من التسجيلات."
+            )
+
+        with st.expander("📁 سجل المكالمات"):
+
+            if st.button("فحص الهاتف"):
+                st.session_state.evidence.append(
+                    investigate("فحص الهاتف")
+                )
+
+   
