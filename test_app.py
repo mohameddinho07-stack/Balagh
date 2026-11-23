@@ -12,7 +12,7 @@ class AppFlowTests(unittest.TestCase):
         a.selectbox[0].select('يوسف بيومي')
         a.multiselect[0].select('E03')
         a.checkbox[0].check()
-        a.button(key='FormSubmitter:accusation-خلاص، ده اتهامي').click().run()
+        a.button(key='FormSubmitter:accusation-ثبّت الاتهام').click().run()
         assert not a.exception
         assert a.session_state['investigation']['finished']
         assert not any('الحل:' in t.value for t in a.subheader)
@@ -27,7 +27,7 @@ class AppFlowTests(unittest.TestCase):
         a.selectbox[0].select('نادين مراد')
         for e in ['E06','E07','E08']: a.multiselect[0].select(e)
         a.checkbox[0].check()
-        a.button(key='FormSubmitter:accusation-خلاص، ده اتهامي').click().run()
+        a.button(key='FormSubmitter:accusation-ثبّت الاتهام').click().run()
         assert a.session_state['investigation']['result']['success']
         assert not a.exception
         
