@@ -1,34 +1,47 @@
-import random
-
-from data import (
-    CHARACTERS,
-    LOCATIONS,
-    VICTIMS,
-    INVESTIGATION_RESULTS
-)
+from data import CASE_001
 
 def generate_case():
 
-    location = random.choice(LOCATIONS)
-
-    victim = random.choice(VICTIMS)
-
-    suspects = random.sample(CHARACTERS, 4)
-
-    killer = random.choice(suspects)
-
     return {
-        "victim": victim,
-        "location": location,
-        "suspects": suspects,
-        "killer": killer
+        "victim": CASE_001["victim"],
+        "location": CASE_001["location"],
+        "suspects": [
+            {
+                "name": "آسر منصور",
+                "age": 46,
+                "job": "روائي جرائم",
+                "secret": "كان يبتز الضحية"
+            },
+            {
+                "name": "ليلى الديب",
+                "age": 34,
+                "job": "عازفة بيانو",
+                "secret": "كانت على علاقة سرية بالضحية"
+            },
+            {
+                "name": "يوسف بيومي",
+                "age": 51,
+                "job": "طبيب نفسي",
+                "secret": "يعرف معلومة خطيرة عن القضية"
+            },
+            {
+                "name": "نادين مراد",
+                "age": 29,
+                "job": "صحفية تحقيقات",
+                "secret": "كانت تراقب الضحية منذ أسابيع"
+            }
+        ],
+        "killer": {
+            "name": CASE_001["killer"],
+            "job": "صحفية تحقيقات",
+            "secret": "كانت تراقب الضحية منذ أسابيع"
+        }
     }
+
 
 def investigate(action):
 
-    if action in INVESTIGATION_RESULTS:
-        return random.choice(
-            INVESTIGATION_RESULTS[action]
-        )
-
-    return "لا توجد معلومات جديدة."
+    return CASE_001["evidence"].get(
+        action,
+        "لا توجد معلومات جديدة."
+    )
