@@ -2,6 +2,8 @@
 from copy import deepcopy
 import re
 from data import CASE_001
+from cases_extra import CASES_EXTRA
+import uuid
 
 
 def egyptian_time(hour, minute):
@@ -31,13 +33,37 @@ def _display_copy(value):
     return value
 
 
-def generate_case():
+CASE_REGISTRY = {'001': CASE_001, **CASES_EXTRA}
+CASE_001.setdefault('scene', 'hotel')
+CASE_001.setdefault('reasoning',[
+ {'id':'c101','title':'الساعة مش وقت الوفاة','evidence':['E01','E05'],'text':'فحص البطارية وتقدير الوفاة يفصلوا بين ساعة واقفة ومعاد وفاة.'},
+ {'id':'c102','title':'الزيارة والكوباية','evidence':['E06','E07'],'text':'زيارة متراجعة وسلسلة حيازة للكوباية. اسأل مين كان ماسكها ومين قدّمها.'},
+ {'id':'c103','title':'الخلاف مش كفاية','evidence':['E07','E08','E09'],'text':'الدافع محتاج فرصة ودليل يربط الشخص بالفعل. حجة مستقلة ممكن تبعد الشك.'}])
+CASE_001['public'].update(tagline='باب مقفول من جوّه. ساعة واقفة. وكلام محتاج يتراجع.', difficulty='بداية مناسبة', duration='20–30 دقيقة')
+
+def case_catalog():
+    return [{'id':cid, **{k:c['public'].get(k,'') for k in ['title','location','tagline','difficulty','duration']},'scene':c['scene']} for cid,c in CASE_REGISTRY.items()]
+
+def generate_case(case_id='001'):
     # Canonical 24-hour facts stay in data.py; only the displayed copy changes.
-    return _display_copy(deepcopy(CASE_001))
+    return _display_copy(deepcopy(CASE_REGISTRY[case_id]))
 
 
 def evidence_cards(case):
     return case["evidence"] + [case["verification"]]
+
+
+def available_evidence(case, state):
+    return [e for e in evidence_cards(case) if set(e.get('requires', [])) <= set(state['discovered'])]
+
+
+def inspect_evidence(case, state, evidence_id):
+    if state['finished']:
+        raise ValueError('التحقيق خلص.')
+    if evidence_id not in {e['id'] for e in available_evidence(case,state)}:
+        raise ValueError('افحص الأدلة المطلوبة الأول.')
+    if evidence_id not in state['discovered']:
+        state['discovered'].append(evidence_id)
 
 
 def available_questions(suspect, discovered):
@@ -61,7 +87,7 @@ def record_answer(case, state, suspect_id, question_id):
 
 
 def new_investigation():
-    return {"discovered": [], "interviews": [], "finished": False,
+    return {"attempt_id":uuid.uuid4().hex,"discovered": [], "interviews": [], "finished": False,
             "result": None, "hints_used": 0}
 
 
@@ -89,3 +115,15 @@ def finish_investigation(case, state, suspect_name, submitted_evidence):
     state["result"] = result
     state["finished"] = True
     return result
+
+
+def link_evidence(case,state,evidence_ids):
+    if not isinstance(evidence_ids,list) or len(evidence_ids)>30 or not all(isinstance(x,str) for x in evidence_ids):raise ValueError('اختار أدلة من المحضر.')
+    selected=set(evidence_ids)
+    if state['finished']:raise ValueError('التحقيق خلص.')
+    if len(selected)<2 or not selected<=set(state['discovered']):raise ValueError('اختار دليلين مفحوصين على الأقل.')
+    found=[x for x in case.get('reasoning',[]) if set(x['evidence'])==selected]
+    if not found:return None
+    link=found[0]
+    if link['id'] not in state.setdefault('deductions',[]):state['deductions'].append(link['id'])
+    return link
