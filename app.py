@@ -1,5 +1,5 @@
 import streamlit as st
-from game_engine import generate_case, get_timeline
+from game_engine import generate_case
 
 st.set_page_config(
     page_title="بلاغ",
@@ -22,11 +22,11 @@ if st.session_state.case:
     st.markdown(f"""
 # 🚨 بلاغ رقم 001
 
-## القضية: {case['title']}
+## القضية: {case["title"]}
 
-📍 الموقع: {case['location']}
+📍 الموقع: {case["location"]}
 
-👤 الضحية: {case['victim']}
+👤 الضحية: {case["victim"]}
 """)
 
     st.error(case["story"])
@@ -45,9 +45,8 @@ if st.session_state.case:
     with st.expander("📁 أقوال الشهود"):
         st.text(case["witness_statement"])
 
-    with st.expander("📁 التسلسل الزمني للقضية"):
-
-        for item in get_timeline():
+    with st.expander("📁 التسلسل الزمني"):
+        for item in case["timeline"]:
             st.write(item)
 
     st.markdown("---")
@@ -55,12 +54,11 @@ if st.session_state.case:
     st.subheader("🕵️ المشتبه بهم")
 
     for suspect in case["suspects"]:
-
         st.info(
             f"""
 الاسم: {suspect['name']}
 
-العمر: {suspect['age']} سنة
+العمر: {suspect['age']}
 
 الوظيفة: {suspect['job']}
 """
@@ -82,14 +80,14 @@ if st.session_state.case:
 
     if st.button("⚖️ توجيه الاتهام"):
 
-        if selected == case["killer"]["name"]:
+        if selected == case["killer"]:
 
             st.success(
                 f"""
 ✅ تم حل القضية
 
 المتهم الحقيقي:
-{case['killer']['name']}
+{case['killer']}
 """
             )
 
@@ -100,6 +98,6 @@ if st.session_state.case:
 ❌ اتهام خاطئ
 
 المتهم الحقيقي:
-{case['killer']['name']}
+{case['killer']}
 """
             )
