@@ -11,10 +11,10 @@ h1, h2, h3, [data-testid="stCaptionContainer"] {text-align:right;direction:rtl;}
 [data-testid="stMainBlockContainer"] {max-width:1100px;}
 </style>""", unsafe_allow_html=True)
 st.title("بلاغ")
-st.caption("قضية خيالية مصرية • نسخة فردية تجريبية • استجواب مكتوب، بدون AI أو اتصال بخدمات خارجية")
-mode = st.radio("اختر نمط اللعبة", ["🔍 التحقيق الفردي", "🎮 اللعب الجماعي"], horizontal=True)
-if mode == "🎮 اللعب الجماعي":
-    st.info("اللعب الجماعي غير متاح في هذه النسخة. لا توجد غرف حقيقية أو لاعبين متصلين بعد. ارجع للتحقيق الفردي لتجربة القضية.")
+st.caption("حكاية جريمة من خيالنا • جرّب تلعب لوحدك • الردود مكتوبة، لسه مفيش AI ولا خدمات برّه اللعبة")
+mode = st.radio("تحب تلعب إزاي؟", ["🔍 العب لوحدك", "🎮 العب مع صحابك"], horizontal=True)
+if mode == "🎮 العب مع صحابك":
+    st.info("اللعب مع صحابك لسه مش شغّال. مفيش أوض ولا لعيبة متوصلين ببعض دلوقتي. اختار تلعب لوحدك وجرّب القضية.")
     st.stop()
 
 if "case" not in st.session_state:
@@ -22,8 +22,8 @@ if "case" not in st.session_state:
 
 if st.session_state.case is None:
     st.subheader("بلاغ 001 • الغرفة المغلقة")
-    st.write("افحص الأدلة، استجوب أربع شخصيات، ثم اربط اتهامك بالأدلة. القرار النهائي يُنهي المحاولة؛ الحل لا يظهر إلا بطلبك بعدها.")
-    if st.button("🚔 بدء التحقيق", type="primary"):
+    st.write("قلّب في الأدلة، واسأل الأربع شخصيات، وشوف مين كلامه مش راكب. لما تتهم حد هتقفل المحاولة دي، والحل مش هيتحرق عليك إلا لو طلبت تشوفه بعدها.")
+    if st.button("🚔 يلا نحقق", type="primary"):
         st.session_state.case = generate_case()
         st.session_state.investigation = new_investigation()
         st.rerun()
@@ -33,45 +33,45 @@ case = st.session_state.case
 state = st.session_state.investigation
 public = case["public"]
 st.subheader(f"بلاغ {case['id']} • {public['title']}")
-st.caption(f"المكان: {public['location']} | الضحية: {public['victim']}")
+st.caption(f"المكان: {public['location']} | اللي اتقتل: {public['victim']}")
 st.info(public["story"])
 if state["finished"]:
     result = state["result"]
     if result["success"]:
-        st.success("اتهام مدعوم بالسلسلة المطلوبة من الأدلة. انتهت المحاولة.")
+        st.success("جبتها! مسكت الفاعل وربطت الأدلة ببعض صح. المحاولة دي خلصت.")
     elif result["killer_correct"]:
-        st.warning("اخترت الفاعل، لكن سلسلة الأدلة المقدمة غير مكتملة. انتهت المحاولة، ويمكنك مراجعة الحل أو البدء من جديد.")
+        st.warning("مسكت الفاعل، بس الأدلة اللي اخترتها لسه مش مكمّلة الحكاية. المحاولة دي خلصت؛ شوف الحل لو حابب أو جرّب من الأول.")
     else:
-        st.error("الاتهام لا يطابق حل القضية. انتهت المحاولة. لم نكشف اسم الفاعل؛ راجع الحل فقط لو أردت.")
+        st.error("لأ، مش هو ده اللي عملها. المحاولة دي خلصت، بس مش هنحرق عليك اسم الفاعل. لو عايز تعرفه، اختار تشوف الحل.")
     st.write(f"قرارك: {result['suspect']} | الأدلة: {', '.join(result['submitted_evidence'])}")
-    if st.checkbox("أريد كشف الحل وشرح الأدلة", key="reveal_solution"):
+    if st.checkbox("ورّيني الحل وفهّمني الأدلة", key="reveal_solution"):
         st.subheader(f"الحل: {case['truth']['killer']}")
         st.write(case["truth"]["explanation"])
-    if st.button("بدء محاولة جديدة", type="primary"):
+    if st.button("نجرّب من الأول", type="primary"):
         for key in list(st.session_state):
             del st.session_state[key]
         st.rerun()
 
 a, b, c = st.columns(3)
-a.metric("أدلة فُحصت", f"{len(state['discovered'])}/{len(evidence_cards(case))}")
-b.metric("إجابات مسجلة", len(state["interviews"]))
-c.metric("تلميحات مستخدمة", state["hints_used"])
+a.metric("أدلة بصّيت عليها", f"{len(state['discovered'])}/{len(evidence_cards(case))}")
+b.metric("ردود اتسجّلت", len(state["interviews"]))
+c.metric("تلميحات خُدتها", state["hints_used"])
 
-with st.expander("🕒 التسلسل الزمني"):
+with st.expander("🕒 إيه حصل وإمتى؟"):
     for item in public["timeline"]:
         st.write(item)
 
 st.subheader("ملف الأدلة")
-st.caption("افتح التقرير للقراءة، ثم اضغط فحص الدليل لتسجيله وإتاحة أسئلة المواجهة المرتبطة به.")
+st.caption("افتح الدليل واقراه، وبعدها دوس «بصّيت على الدليل ده». كده هيتسجّل عندك ويفتحلك أسئلة تواجه بيها الناس.")
 for evidence in evidence_cards(case):
     inspected = evidence["id"] in state["discovered"]
     with st.expander(f"{evidence['id']} • {evidence['title']} {'✓' if inspected else ''}"):
         st.write(evidence["text"])
-        if st.button("تم فحص الدليل", key=f"inspect_{evidence['id']}", disabled=inspected or state["finished"]):
+        if st.button("بصّيت على الدليل ده", key=f"inspect_{evidence['id']}", disabled=inspected or state["finished"]):
             state["discovered"].append(evidence["id"])
             st.rerun()
 
-st.subheader("🕵️ الاستجواب")
+st.subheader("🕵️ نسأل الناس دي")
 for suspect in case["characters"]:
     with st.expander(suspect["name"]):
         st.caption(f"{suspect['job']} • {suspect['age']} سنة")
@@ -83,39 +83,39 @@ for suspect in case["characters"]:
                 st.rerun()
         locked = len(suspect["interviews"]) - len(unlocked)
         if locked:
-            st.caption(f"أسئلة مواجهة إضافية مقفلة: {locked}. افحص أدلة أخرى لفتحها.")
+            st.caption(f"أسئلة مواجهة لسه مقفولة: {locked}. بصّ على أدلة تانية عشان تفتحها.")
         for entry in state["interviews"]:
             if entry["suspect"] == suspect["name"]:
                 st.markdown(f"**س: {entry['question']}**")
                 st.write(f"ج: {entry['answer']}")
 
-with st.expander("🗂️ سجل الاستجوابات", expanded=False):
+with st.expander("🗂️ الناس قالت إيه؟", expanded=False):
     if not state["interviews"]:
-        st.write("لم تسجل إجابات بعد.")
+        st.write("لسه ما سألتش حد.")
     for entry in state["interviews"]:
         st.write(f"{entry['suspect']} | {entry['question']}")
         st.write(entry["answer"])
 
-st.subheader("📓 دفتر المحقق")
-st.text_area("ملاحظاتك واستنتاجاتك، محفوظة خلال الجلسة فقط", key="detective_notes", height=150)
+st.subheader("📓 نوتة المحقق")
+st.text_area("اكتب اللي واخد بالك منه هنا، هيفضل معاك طول ما جلسة اللعب شغّالة بس", key="detective_notes", height=150)
 if not state["finished"]:
-    if st.button("💡 تلميح بدون كشف الفاعل"):
+    if st.button("💡 ادّيني طرف خيط من غير حرق"):
         state["hints_used"] += 1
     if state["hints_used"]:
-        st.info("افصل بين وقت دخول الجاني ووقت الوفاة. اختبر ادعاء المغادرة، ثم اربط الزيارة بالكوب والدافع؛ البصمة أو الخصومة وحدهما لا يكفيان.")
-    st.subheader("⚖️ قرار الاتهام")
-    st.caption("قرار واحد لكل محاولة. اختر المتهم والأدلة التي تربط الزيارة بالفعل والدافع، وليس كل ما يثير الشك.")
+        st.info("خلي بالك، وقت دخول اللي عملها مش لازم يبقى هو وقت الموت. شوف حكاية «أنا مشيت» دي صح ولا لأ، واربط الزيارة بالكوباية والسبب. البصمة لوحدها أو الخناقة لوحدها مش كفاية.")
+    st.subheader("⚖️ هتلبّسها لمين؟")
+    st.caption("ليك قرار أخير واحد في المحاولة. اختار اللي عملها، وحدد الأدلة اللي بتربط زيارته باللي حصل وسببه، مش أي حاجة تخلّيك تشك وخلاص.")
     cards = {e["id"]: e for e in evidence_cards(case)}
     with st.form("accusation"):
-        selected = st.selectbox("المتهم الرئيسي", [s["name"] for s in case["characters"]], index=None, placeholder="اختر المتهم")
-        evidence_ids = st.multiselect("الأدلة الداعمة التي فحصتها", state["discovered"], format_func=lambda x: f"{x} • {cards[x]['title']}")
-        confirmed = st.checkbox("أعتمد القرار النهائي وأفهم أنه يُنهي هذه المحاولة")
-        submitted = st.form_submit_button("اعتماد الاتهام", type="primary")
+        selected = st.selectbox("مين اللي عملها؟", [s["name"] for s in case["characters"]], index=None, placeholder="اختار حد")
+        evidence_ids = st.multiselect("إيه الأدلة اللي بصّيت عليها وبتسند كلامك؟", state["discovered"], format_func=lambda x: f"{x} • {cards[x]['title']}")
+        confirmed = st.checkbox("أيوه، ده قراري الأخير وعارف إن المحاولة هتقفل بعده")
+        submitted = st.form_submit_button("خلاص، ده اتهامي", type="primary")
     if submitted:
         if not confirmed or selected is None or not evidence_ids:
-            st.warning("اختر متهمًا ودليلًا واحدًا على الأقل وأكد اعتماد القرار.")
+            st.warning("اختار حد ودليل واحد على الأقل، وعلّم إن ده قرارك الأخير.")
         else:
             finish_investigation(case, state, selected, evidence_ids)
             st.rerun()
 
-st.caption("التقدم محفوظ في جلسة المتصفح الحالية فقط، وليس في حساب أو قاعدة بيانات. تحديث الاتصال أو انتهاء الجلسة قد يفقده. لا توجد خدمة AI أو غرف مشتركة في هذه النسخة.")
+st.caption("اللعبة فاكرة اللي عملته طول جلسة اللعب دي بس، مش بتحفظه في حساب. لو الاتصال اتجدد أو الجلسة قفلت ممكن يضيع. ولسه مفيش AI ولا أوض تلعب فيها مع صحابك.")
