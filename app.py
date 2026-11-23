@@ -13,7 +13,18 @@ h1, h2, h3, [data-testid="stCaptionContainer"] {text-align:right;direction:rtl;}
 </style>""", unsafe_allow_html=True)
 st.title("بلاغ")
 st.caption("حكاية جريمة من خيالنا • جرّب تلعب لوحدك • اسأل كل الشخصيات بطريقتك أو بالأسئلة الجاهزة")
-mode = st.radio("تحب تلعب إزاي؟", ["🔍 العب لوحدك", "🎮 العب مع صحابك", "🏁 سباق محققين"], horizontal=True)
+mode = st.radio("تحب تلعب إزاي؟", ["🔍 العب لوحدك", "🎮 العب مع صحابك", "🏁 سباق محققين", "🕯️ أوضة 3D، تجربة"], horizontal=True)
+if mode == "🕯️ أوضة 3D، تجربة":
+    import json
+    from pathlib import Path
+    import streamlit.components.v1 as components
+    case = generate_case()
+    short = {'E01':'ملف المحضر','E03':'التليفون','E05':'الساعة','E07':'الكوباية الزرقا'}
+    cards = [dict(e, short=short[e['id']]) for e in evidence_cards(case) if e['id'] in short]
+    scene = Path(__file__).with_name('scene3d.html').read_text(encoding='utf-8')
+    components.html(scene.replace('__CASE_FILES__', json.dumps(cards, ensure_ascii=False)), height=1540, scrolling=True)
+    st.caption('دي عينة للأجواء والتفاعل، مش نقل للعبة كلها. ارجع لأي نمط فوق عشان تكمّل اللعب المحفوظ.')
+    st.stop()
 room_mode = mode != "🔍 العب لوحدك"
 race_mode = mode == "🏁 سباق محققين"
 room = None
