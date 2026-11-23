@@ -8,7 +8,41 @@ st.set_page_config(
 )
 
 st.title("🚨 بلاغ")
+mode = st.radio(
+    "اختر نمط اللعبة",
+    [
+        "🔍 Investigation Mode",
+        "🎮 Multiplayer"
+    ]
+)
 
+if mode == "🎮 Multiplayer":
+
+    st.subheader("🎮 Multiplayer Lobby")
+
+    player_name = st.text_input(
+        "اسم اللاعب"
+    )
+
+    room_code = st.text_input(
+        "كود الغرفة"
+    )
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        if st.button("🎮 إنشاء غرفة"):
+            st.success(
+                "سيتم ربط إنشاء الغرفة بقاعدة البيانات في الخطوة القادمة"
+            )
+
+    with col2:
+        if st.button("🚪 دخول غرفة"):
+            st.success(
+                f"{player_name} انضم إلى الغرفة {room_code}"
+            )
+
+    st.stop()
 if "case" not in st.session_state:
     st.session_state.case = None
 
