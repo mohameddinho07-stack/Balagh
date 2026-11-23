@@ -175,10 +175,13 @@ crime_scene = components.declare_component('balagh_crime', path=str(Path(__file_
 scene_scope = '|'.join([case['id'], mode, str(room.get('me','')) if room_mode else 'solo'])
 scene_event = crime_scene(cards=evidence_cards(case), discovered=state['discovered'],
     finished=state['finished'], scope=scene_scope, location=public['location'],
-    scene_id='hotel_suite_001', key='crime_scene_'+scene_scope, default=None)
+    scene_id='hotel_suite_001', people=[{'id':c['id'],'name':c['name'],'job':c['job']} for c in case['characters']], key='crime_scene_'+scene_scope, default=None)
 if isinstance(scene_event, dict) and scene_event.get('nonce') != st.session_state.get('last_scene_nonce'):
     st.session_state.last_scene_nonce = scene_event.get('nonce')
     eid = scene_event.get('evidence')
+    person = scene_event.get('person')
+    if scene_event.get('scope') == scene_scope and person in {c['id'] for c in case['characters']}:
+        st.session_state.focus_person = person
     if (scene_event.get('scope') == scene_scope and not state['finished']
             and eid in {e['id'] for e in evidence_cards(case)} and eid not in state['discovered']):
         # Room validation and revision checks run before any local change.
@@ -229,7 +232,7 @@ for evidence in evidence_cards(case):
 
 st.subheader("🕵️ نسمع أقوالهم")
 for suspect in case["characters"]:
-    with st.expander(suspect["name"]):
+    with st.expander(suspect["name"], expanded=st.session_state.get("focus_person")==suspect["id"]):
         st.caption(f"{suspect['job']} • {suspect['age']} سنة")
         st.write(suspect["public_info"])
         unlocked = available_questions(suspect, state["discovered"])
