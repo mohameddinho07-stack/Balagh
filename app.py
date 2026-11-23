@@ -238,17 +238,6 @@ with st.expander("🕒 إيه حصل وإمتى؟"):
             st.markdown(f"**{time_label}**")
             st.write(event)
 
-st.subheader("📂 نسخة نصية من نفس أدلة الأوضة")
-st.caption("افتح الدليل واقراه، وبعدها دوس «بصّيت على الدليل ده». كده هيتسجّل عندك ويفتحلك أسئلة تواجه بيها الناس.")
-for evidence in evidence_cards(case):
-    inspected = evidence["id"] in state["discovered"]
-    with st.expander(f"{evidence['id']} • {evidence['title']} {'✓' if inspected else ''}"):
-        st.write(evidence["text"])
-        if st.button("بصّيت على الدليل ده", key=f"inspect_{evidence['id']}", disabled=inspected or state["finished"]):
-            state["discovered"].append(evidence["id"])
-            persist_room('inspect', {'evidence':evidence['id']})
-            st.rerun()
-
 st.subheader("💬 اسأل بطريقتك، تجربة AI")
 st.caption("AI من Groq بيفهم سؤالك وسياق آخر كلامكم. الرد نفسه من كلام القضية المكتوب، عشان الحقيقة والأدلة ما يتغيّروش. لسه مش حوار مولّد بحرية.")
 st.warning("سؤالك وآخر 4 أسئلة بيتبعتوا لـ Groq. ما تكتبش بيانات شخصية أو أسرار. لو الحد المجاني خلص، التجربة بتقف من غير دفع، والأسئلة الجاهزة تفضل شغّالة.")
