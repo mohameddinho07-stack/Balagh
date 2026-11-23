@@ -17,13 +17,13 @@ def available_questions(suspect, discovered):
 
 def record_answer(case, state, suspect_id, question_id):
     if state["finished"]:
-        raise ValueError("انتهى التحقيق. ابدأ محاولة جديدة.")
+        raise ValueError("التحقيق خلص. جرّب من الأول.")
     suspect = next((s for s in case["characters"] if s["id"] == suspect_id), None)
     if suspect is None:
-        raise ValueError("شخصية غير موجودة")
+        raise ValueError("الشخصية دي مش عندنا")
     question = next((q for q in available_questions(suspect, state["discovered"]) if q["id"] == question_id), None)
     if question is None:
-        raise ValueError("السؤال غير متاح قبل فحص أدلته")
+        raise ValueError("بصّ على أدلة السؤال ده الأول")
     entry = {"suspect": suspect["name"], "question_id": question_id,
              "question": question["question"], "answer": question["answer"]}
     if not any(x["question_id"] == question_id for x in state["interviews"]):
@@ -40,12 +40,12 @@ def evaluate_accusation(case, suspect_name, submitted_evidence, discovered):
     names = {s["name"] for s in case["characters"]}
     selected = set(submitted_evidence)
     if suspect_name not in names:
-        raise ValueError("اختر مشتبهًا به من القضية")
+        raise ValueError("اختار حد من الناس اللي في القضية")
     if not selected or not selected <= set(discovered):
-        raise ValueError("اختر أدلة فحصتها بالفعل")
+        raise ValueError("اختار أدلة إنت بصّيت عليها فعلًا")
     valid_ids = {e["id"] for e in evidence_cards(case)}
     if not selected <= valid_ids:
-        raise ValueError("دليل غير موجود")
+        raise ValueError("الدليل ده مش عندنا")
     killer_correct = suspect_name == case["truth"]["killer"]
     evidence_complete = set(case["truth"]["required_evidence"]) <= selected
     return {"success": killer_correct and evidence_complete,
@@ -55,7 +55,7 @@ def evaluate_accusation(case, suspect_name, submitted_evidence, discovered):
 
 def finish_investigation(case, state, suspect_name, submitted_evidence):
     if state["finished"]:
-        raise ValueError("تم اعتماد القرار بالفعل")
+        raise ValueError("إنت قلت قرارك الأخير خلاص")
     result = evaluate_accusation(case, suspect_name, submitted_evidence, state["discovered"])
     state["result"] = result
     state["finished"] = True
