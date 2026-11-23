@@ -1,8 +1,11 @@
 from data import CASE_001
 
+
 def generate_case():
 
     return {
+        "title": CASE_001["title"],
+        "story": CASE_001["story"],
         "victim": CASE_001["victim"],
         "location": CASE_001["location"],
         "suspects": [
@@ -45,3 +48,8 @@ def investigate(action):
         action,
         "لا توجد معلومات جديدة."
     )
+
+
+def get_timeline():
+
+    return CASE_001["timeline"]
