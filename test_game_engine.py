@@ -85,3 +85,33 @@ class CaseTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TimeDisplayTests(unittest.TestCase):
+    def test_12_hour_dayparts_and_isolation(self):
+        from game_engine import display_times
+        self.assertEqual(display_times("22:00"), "\u2067\u206610:00\u2069\u00a0بليل\u2069")
+        self.assertIn("بعد\u00a0نص\u00a0الليل", display_times("02:17"))
+        self.assertIn("الصبح", display_times("10:00"))
+        self.assertIn("12:00", display_times("00:00"))
+        self.assertIn("الضهر", display_times("12:00"))
+
+    def test_range_order_and_minutes_preserved(self):
+        from game_engine import display_times
+        result = display_times("22:55–23:21")
+        self.assertTrue(result.startswith("من "))
+        self.assertLess(result.index("10:55"), result.index("11:21"))
+        self.assertIn(" لحد ", result)
+        self.assertNotIn("23:", result)
+
+    def test_case_facts_unchanged(self):
+        from data import CASE_001
+        from game_engine import display_times
+        import re
+        case = generate_case()
+        self.assertEqual(case["truth"], CASE_001["truth"])
+        self.assertIn("22:55", CASE_001["evidence"][1]["text"])
+        self.assertIn("10:55", case["evidence"][1]["text"])
+        self.assertEqual(case["characters"][3]["interviews"][1]["requires"], ["E06"])
+        for evidence in case["evidence"]:
+            self.assertNotRegex(evidence["text"], r"(?:2[0-3]):[0-5]\d")
