@@ -33,9 +33,9 @@ class AppFlowTests(unittest.TestCase):
         
         a=started();a.radio[0].set_value('🎮 العب مع صحابك').run()
         assert not a.exception
-        assert any('لسه مش شغّال' in m.value for m in a.info)
+        assert any('ربط الأوض مش جاهز' in m.value for m in a.info)
         assert len(a.button)==0
-        print('UI PASS: wrong accusation locks without revealing; opt-in reveal; clean reset; complete evidence win; multiplayer honest unavailable message')
+        print('UI PASS: wrong accusation locks without revealing; opt-in reveal; clean reset; complete evidence win; room configuration safe fallback')
 
 
     def test_ai_has_equal_choices_and_no_default(self):
