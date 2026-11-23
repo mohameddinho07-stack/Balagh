@@ -1,0 +1,151 @@
+<!doctype html><html lang="ar" dir="rtl"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>بلاغ، أوضة الجريمة</title><style>@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap');*{box-sizing:border-box}body{margin:0;background:#101b19;color:#eee5cf;font-family:Cairo,Tahoma,sans-serif;font-size:14px}button,input{font:inherit}button{cursor:pointer;min-height:44px;background:#253b32;color:#f1e8d3;border:1px solid #71836b;border-radius:6px;padding:8px 14px}button:hover{background:#364b3b}button:focus-visible,input:focus-visible{outline:3px solid #edc779;outline-offset:3px}.shell{max-width:1280px;margin:auto;padding:18px}header{display:flex;justify-content:space-between;gap:14px;align-items:center;border-bottom:1px solid #91a18a40;padding-bottom:14px}h1{font-weight:900;font-size:29px;margin:0;color:#eddcb7}small,.muted{color:#b6c3ad;font-size:12px}.label{letter-spacing:1px;color:#cbb274;font-size:11px}.tools{display:flex;align-items:center;gap:9px;flex-wrap:wrap}.tools input{width:85px;accent-color:#d2b573}.notice{font-size:12px;color:#c6ceb9;line-height:1.8;margin:12px 0}body.compact .stage,body.compact .board,body.compact .notice,body.compact .footer,body.compact .credits,body.compact #entry,body.compact #status{display:none}body.compact .shell{padding:8px}body.compact header{border:0;padding:0}body.compact h1{font-size:18px}body.compact header small,body.compact header .label{display:none}body.compact header{flex-direction:row;align-items:center}body.compact .tools{width:auto}body.compact #motion{display:none}body.compact .tools input{width:55px}@media(max-width:650px){body.compact header{flex-direction:column;align-items:stretch}body.compact h1{font-size:15px}}.stage{position:relative;height:510px;border:1px solid #70816955;border-radius:9px;overflow:hidden;background:radial-gradient(#3c4932,#0d1715)}canvas{display:block;width:100%;height:100%;touch-action:none}.hint{position:absolute;top:12px;right:12px;background:#101b19dc;border:1px solid #87947b50;border-radius:6px;padding:8px 12px;font-size:12px;pointer-events:none}.scene-title{position:absolute;bottom:15px;right:18px;pointer-events:none;text-shadow:0 2px 6px #000}.scene-title b{font-size:23px;display:block}.zoom{position:absolute;left:12px;bottom:12px;display:flex;gap:7px;direction:ltr}.zoom button{background:#17271ee8;width:44px;padding:3px;font-size:20px}.board{display:grid;grid-template-columns:1fr 1.2fr;gap:18px;margin-top:18px}.files{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-content:start}.file{text-align:right;padding:13px;background:#1d2f27;min-height:90px}.file b{display:block;font-size:15px}.file span{font-size:11px;color:#b7c6ab}.file.active{border-color:#e7c579;box-shadow:inset 0 -3px #d6b56d}.read{background:#e8dfc7;color:#293329;border-radius:5px;padding:22px;min-height:250px;line-height:1.95}.read h2{font-size:21px;line-height:1.6;margin:8px 0 12px}.read p{font-size:14px}.read .label{color:#7a523d}.read button{background:#2d4838;color:#fff}.stamp{display:none;border:2px solid #55715b;color:#32513a;padding:3px 13px;transform:rotate(-4deg);font-weight:700;width:max-content;margin-top:12px}.stamp.show{display:block}.footer{font-size:11px;color:#afbea5;margin-top:17px}.error{position:absolute;inset:0;display:grid;place-content:center;padding:30px;text-align:center;background:#14231f;z-index:3}.error[hidden]{display:none}.status{min-height:22px;color:#d3c18b;font-size:12px}.credits{margin-top:20px;font-size:11px;color:#acbca1}summary{cursor:pointer;min-height:44px}.soft-motion{animation:fade .22s ease}@keyframes fade{from{opacity:.4}to{opacity:1}}@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}@media(max-width:650px){.shell{padding:10px}header{align-items:start;flex-direction:column}.tools{width:100%}.stage{height:390px}.hint{font-size:10px;max-width:90%;padding:6px 9px}.scene-title b{font-size:18px}.scene-title small{font-size:10px}.board{grid-template-columns:1fr}.files{grid-template-columns:1fr 1fr}.file{padding:10px}.read{padding:18px}.notice{font-size:11px}.zoom{bottom:60px}.tools button{font-size:12px}.tools label{font-size:11px}}</style><body><main class="shell"><header><div><div class="label">بلاغ / حكايات تحقيق مصرية</div><h1>الليل لسه مخلصش.</h1><small>ادخل، يا حضرة الظابط. فيه محضر مستنيك.</small></div><div class="tools"><button id="sound" aria-pressed="false">♫ الصوت هيبدأ مع أول لمسة</button><label for="vol">الصوت</label><input id="vol" type="range" min="0" max="100" value="25" aria-label="مستوى الموسيقى والأجواء"><button id="motion" aria-pressed="false">حركة أقل</button></div></header><div id="entry" style="margin:18px 0"><button id="begin" style="background:#dec180;color:#17271e;font-weight:900;min-width:190px">ابدأ التحقيق ←</button><p class="muted">اختار القضية بعدها. الأجواء دي مدخلك، مش دليل من المحضر.</p></div><p class="notice">عينة 3D من نفس القضية، مش اللعبة الكاملة: الفحص هنا للتجربة بس، مش بيتحسب في الفردي أو الأوض أو السباق. كل المشهد متخيّل، مكان الحاجات وديكور الأوضة مش أدلة جديدة. مفيش مشي حر.</p><div class="stage" id="stage"><div class="hint">اسحب عشان تلف الكاميرا · قرّب بالعجلة أو الزرارين · دوس على الكوباية أو الساعة أو التليفون أو الملف</div><div class="scene-title"><b>الجناح ساكت. المحضر لسه بيتكلم.</b><small>ديكور توضيحي، مش إعادة بناء جنائية</small></div><div class="zoom"><button id="zin" aria-label="قرّب الكاميرا">+</button><button id="zout" aria-label="بعّد الكاميرا">−</button><button id="reset" aria-label="رجّع زاوية الكاميرا">↺</button></div><div class="error" id="loading"><b>بنجهّز الأوضة...</b><p>لو الرسومات مش مدعومة، كل الملفات موجودة تحت.</p></div></div><div class="status" id="status" role="status" aria-live="polite">فحصت ٠ من ٤ ملفات في العينة</div><section class="board"><div><div class="label" style="margin:0 0 10px">الحاجات اللي تقدر تفحصها</div><div class="files" id="files"></div><p class="muted">مش لازم تعتمد على الرسم. تقدر تفتح نفس الملفات من الأزرار، باللمس أو الكيبورد.</p></div><article class="read" id="read"><div class="label">محضر معاينة / فندق النيل الملكي</div><h2>ابدأ بحاجة لفتت نظرك.</h2><p>دوس على الكوباية الزرقا، الساعة، التليفون أو ملف المحضر. اقرا كلام الدليل، وبعدها علّم إنك فحصته. مفيش اسم قاتل أو حل هيتكشف هنا.</p><p>الموسيقى مقفولة لحد ما تشغّلها. تقدر تقفلها أو تغيّر مستواها في أي وقت.</p></article></section><div class="footer">كل الشخصيات والأحداث خيالية. الموسيقى والأصوات معمولة برمجيًا للتجربة، من غير تسجيلات أو عينات جاهزة. الصوت مش بيكشف أي دليل.</div><details class="credits"><summary>عن التجربة ومصادرها</summary><p>المشهد والأشكال والموسيقى شغل أصلي بسيط. الخط Cairo بترخيص SIL OFL، والرسومات Three.js بترخيص MIT. المكتبة والخط بيتحمّلوا من CDN، فمحتاجين اتصال. مفيش بيانات شخصية أو مفاتيح حسابات في المشهد. حالة فحص العينة بتبدأ من الأول لما تعمل تحديث كامل للصفحة.</p><p>Three.js © 2010-2024 authors, MIT. Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files, to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies, subject to inclusion of this copyright notice and permission notice. THE SOFTWARE IS PROVIDED AS IS, WITHOUT WARRANTY OF ANY KIND.</p><p>Cairo © The Cairo Project Authors, SIL Open Font License 1.1. <a href="https://raw.githubusercontent.com/google/fonts/main/ofl/cairo/OFL.txt" target="_blank" rel="noopener" style="color:#e1ca8e">ترخيص الخط</a></p><details><summary>النص الكامل لتراخيص المكتبة والخط</summary><pre style="white-space:pre-wrap;direction:ltr;text-align:left;font:11px monospace">The MIT License
+
+Copyright © 2010-2024 three.js authors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the &quot;Software&quot;), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+
+
+Copyright 2009 The Cairo Project Authors (https://github.com/Gue3bara/Cairo)
+
+This Font Software is licensed under the SIL Open Font License, Version 1.1.
+This license is copied below, and is also available with a FAQ at:
+http://scripts.sil.org/OFL
+
+
+-----------------------------------------------------------
+SIL OPEN FONT LICENSE Version 1.1 - 26 February 2007
+-----------------------------------------------------------
+
+PREAMBLE
+The goals of the Open Font License (OFL) are to stimulate worldwide
+development of collaborative font projects, to support the font creation
+efforts of academic and linguistic communities, and to provide a free and
+open framework in which fonts may be shared and improved in partnership
+with others.
+
+The OFL allows the licensed fonts to be used, studied, modified and
+redistributed freely as long as they are not sold by themselves. The
+fonts, including any derivative works, can be bundled, embedded, 
+redistributed and/or sold with any software provided that any reserved
+names are not used by derivative works. The fonts and derivatives,
+however, cannot be released under any other type of license. The
+requirement for fonts to remain under this license does not apply
+to any document created using the fonts or their derivatives.
+
+DEFINITIONS
+&quot;Font Software&quot; refers to the set of files released by the Copyright
+Holder(s) under this license and clearly marked as such. This may
+include source files, build scripts and documentation.
+
+&quot;Reserved Font Name&quot; refers to any names specified as such after the
+copyright statement(s).
+
+&quot;Original Version&quot; refers to the collection of Font Software components as
+distributed by the Copyright Holder(s).
+
+&quot;Modified Version&quot; refers to any derivative made by adding to, deleting,
+or substituting -- in part or in whole -- any of the components of the
+Original Version, by changing formats or by porting the Font Software to a
+new environment.
+
+&quot;Author&quot; refers to any designer, engineer, programmer, technical
+writer or other person who contributed to the Font Software.
+
+PERMISSION &amp; CONDITIONS
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of the Font Software, to use, study, copy, merge, embed, modify,
+redistribute, and sell modified and unmodified copies of the Font
+Software, subject to the following conditions:
+
+1) Neither the Font Software nor any of its individual components,
+in Original or Modified Versions, may be sold by itself.
+
+2) Original or Modified Versions of the Font Software may be bundled,
+redistributed and/or sold with any software, provided that each copy
+contains the above copyright notice and this license. These can be
+included either as stand-alone text files, human-readable headers or
+in the appropriate machine-readable metadata fields within text or
+binary files as long as those fields can be easily viewed by the user.
+
+3) No Modified Version of the Font Software may use the Reserved Font
+Name(s) unless explicit written permission is granted by the corresponding
+Copyright Holder. This restriction only applies to the primary font name as
+presented to the users.
+
+4) The name(s) of the Copyright Holder(s) or the Author(s) of the Font
+Software shall not be used to promote, endorse or advertise any
+Modified Version, except to acknowledge the contribution(s) of the
+Copyright Holder(s) and the Author(s) or with their explicit written
+permission.
+
+5) The Font Software, modified or unmodified, in part or in whole,
+must be distributed entirely under this license, and must not be
+distributed under any other license. The requirement for fonts to
+remain under this license does not apply to any document created
+using the Font Software.
+
+TERMINATION
+This license becomes null and void if any of the above conditions are
+not met.
+
+DISCLAIMER
+THE FONT SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO ANY WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT
+OF COPYRIGHT, PATENT, TRADEMARK, OR OTHER RIGHT. IN NO EVENT SHALL THE
+COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+INCLUDING ANY GENERAL, SPECIAL, INDIRECT, INCIDENTAL, OR CONSEQUENTIAL
+DAMAGES, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF THE USE OR INABILITY TO USE THE FONT SOFTWARE OR FROM
+OTHER DEALINGS IN THE FONT SOFTWARE.
+</pre></details></details></main><script>const CASE_FILES=[{"id": "E01", "title": "تقرير الطب الشرعي", "text": "نادر مات حوالي ⁧⁦11:42⁩ بليل⁩ بسبب مادة سامة من خيالنا، كان بلعها قبل ما يموت. مفيش إصابات ولا علامات مقاومة. التقرير لوحده ما يقولناش مين ادّاهاله. اسم المادة وتفاصيلها والكمية مش جزء من حل اللعبة.", "short": "ملف المحضر"}, {"id": "E03", "title": "مين كلّم مين؟", "text": "⁧⁦9:35⁩ بليل⁩: نادين كلمت نادر. ⁧⁦10:41⁩ بليل⁩: رقم مش متسجّل اتصل، ولسه مش معروف بتاع مين. ⁧⁦11:08⁩ بليل⁩: يوسف اتصل بنادر، والمكالمة خدت 14 دقيقة وخلصت ⁧⁦11:22⁩ بليل⁩. المكالمة ما تثبتش يوسف كان فين، وكمان خلصت قبل معاد الموت.", "short": "التليفون"}, {"id": "E05", "title": "حكاية الباب والساعة", "text": "الباب سليم. نادر بعت للريسبشن رسالة ⁧⁦11:24⁩ بليل⁩ قال فيها إن الزيارات خلصت وإنه أمّن الباب من جوّه بنفسه. فحص ساعة إيده بيقول إنها وقفت ⁧⁦10:13⁩ بليل⁩ عشان البطارية خلصت، مش عشان ده وقت موته. وكونه بقى لوحده بعد كده ما يمنعش إنه يكون أخد المادة قبل ما يقفل الباب.", "short": "الساعة"}, {"id": "E07", "title": "الكوباية كانت مع مين؟", "text": "صورة موظفة الضيافة وقت التسليم ⁧⁦10:50⁩ بليل⁩ بتورّي الكوباية الزرقا نضيفة ومخصوصة لنادر. الموظفة فضلت قدام باب الجناح لحد ما نادين دخلت ⁧⁦10:58⁩ بليل⁩، وبعدها شافت نادين بتقدّم نفس الكوباية لنادر. أول ما خرجوا ⁧⁦11:18⁩ بليل⁩، الموظفة خدت الكوباية الفاضية على طول وحطّتها في كيس مختوم. التحليل لقى في بواقيها المادة الخيالية اللي سببت الموت، وعلى إيد الكوباية أثر نادين. باقي الكوبايات مفيهاش المادة دي. الموظفة مأكدة في كلامها المتسجّل إن محدش غير نادين مسك الكوباية أو قدّم لنادر حاجة يشربها طول الزيارة. دي أدلة مترابطة في حكايتنا، مش حكم من بصمة لوحدها.", "short": "الكوباية الزرقا"}];
+let seen=new Set(),chosen=null;const files=document.querySelector('#files'),read=document.querySelector('#read'),status=document.querySelector('#status');
+function cue(freq=400){if(!audioOn||!ctx)return;let o=ctx.createOscillator(),g=ctx.createGain();o.type='sine';o.frequency.setValueAtTime(freq,ctx.currentTime);o.frequency.exponentialRampToValueAtTime(freq*.7,ctx.currentTime+.12);g.gain.setValueAtTime(.05,ctx.currentTime);g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.2);o.connect(g).connect(master);o.start();o.stop(ctx.currentTime+.22)}
+function selectFile(id){if(window.entryStage==='landing'){document.querySelector('#status').textContent='ابدأ التحقيق واختار القضية الأول. فحص الأدلة متاح جوه اللعب أو تجربة الأوضة.';return}chosen=id;let f=CASE_FILES.find(x=>x.id===id);document.querySelectorAll('.file').forEach(b=>b.classList.toggle('active',b.dataset.id===id));read.classList.remove('soft-motion');read.innerHTML='';let label=document.createElement('div');label.className='label';label.textContent='ملف '+f.id+' / من المحضر الأصلي';let title=document.createElement('h2');title.textContent=f.title;let body=document.createElement('p');body.textContent=f.text;let btn=document.createElement('button');btn.textContent=seen.has(id)?'اتسجل إنك فحصته':'فحصت الدليل ده';btn.disabled=seen.has(id);btn.onclick=()=>{seen.add(id);selectFile(id);status.textContent='فحصت '+seen.size.toLocaleString('ar-EG')+' من ٤ ملفات في العينة';cue(660)};let stamp=document.createElement('div');stamp.className='stamp'+(seen.has(id)?' show':'');stamp.textContent='تم الفحص';read.append(label,title,body,btn,stamp);if(!reduced)read.classList.add('soft-motion');cue(270);if(innerWidth<650)read.scrollIntoView({behavior:reduced?'instant':'smooth',block:'nearest'});window.dispatchEvent(new CustomEvent('objectchosen',{detail:id}))}
+CASE_FILES.forEach(f=>{let b=document.createElement('button');b.className='file';b.dataset.id=f.id;let t=document.createElement('b');t.textContent=f.short;let e=document.createElement('span');e.textContent=f.id+' · افتح ملف الدليل';b.append(t,e);b.onclick=()=>selectFile(f.id);files.append(b)});
+let reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;const motion=document.querySelector('#motion');motion.setAttribute('aria-pressed',reduced);motion.textContent=reduced?'الحركة قليلة':'حركة أقل';motion.onclick=()=>{reduced=!reduced;motion.setAttribute('aria-pressed',reduced);motion.textContent=reduced?'الحركة قليلة':'حركة أقل'};
+let ctx,master,audioOn=false,timer,nodes=[],note=0,userMuted=false;window.entryStage='landing';function musicStep(){if(!audioOn)return;const tones=[146.83,164.81,155.56,130.81,146.83,196,164.81,130.81];let o=ctx.createOscillator(),g=ctx.createGain();o.type='sine';o.frequency.value=tones[note++%tones.length];g.gain.setValueAtTime(0,ctx.currentTime);g.gain.linearRampToValueAtTime(.10,ctx.currentTime+.15);g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+2.5);o.connect(g).connect(master);o.start();o.stop(ctx.currentTime+2.6)}
+const snd=document.querySelector('#sound');
+function ensureAudio(){if(!ctx){ctx=new(window.AudioContext||window.webkitAudioContext)();master=ctx.createGain();master.gain.value=Number(document.querySelector('#vol').value)/100*.4;master.connect(ctx.destination);[73.416,110.05].forEach(f=>{let o=ctx.createOscillator(),g=ctx.createGain();o.type='sine';o.frequency.value=f;g.gain.value=.10;o.connect(g).connect(master);o.start();nodes.push(o)})}}
+function soundLabel(){snd.setAttribute('aria-pressed',audioOn);snd.textContent=audioOn?'■ اكتم الموسيقى والأجواء':userMuted?'♫ شغّل الموسيقى والأجواء':'♫ الصوت هيبدأ مع أول لمسة'}
+async function startAudio(){if(userMuted)return;try{ensureAudio();await ctx.resume();if(ctx.state==='running'&&!audioOn){audioOn=true;musicStep();clearInterval(timer);timer=setInterval(musicStep,1800)}soundLabel()}catch(e){soundLabel()}}
+snd.onclick=async()=>{if(audioOn){userMuted=true;audioOn=false;clearInterval(timer);await ctx.suspend();soundLabel()}else{userMuted=false;await startAudio()}};
+document.addEventListener('pointerdown',e=>{if(!e.target.closest('#sound')&&!userMuted&&!audioOn)startAudio()},{capture:true});document.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' ')if(!userMuted&&!audioOn)startAudio()},{capture:true});
+// One initial attempt; browsers may require a gesture. Never retry in a loop.
+startAudio();
+function send(type,extra={}){window.parent.postMessage({isStreamlitMessage:true,type,...extra},'*')}
+function fit(){send('streamlit:setFrameHeight',{height:document.body.classList.contains('compact')?(innerWidth<650?135:80):(innerWidth<650?760:760)})}
+document.querySelector('#begin').onclick=async()=>{await startAudio();send('streamlit:setComponentValue',{value:'start',dataType:'json'})};
+window.addEventListener('message',e=>{if(e.data.type!=='streamlit:render')return;window.entryStage=e.data.args.stage||'landing';document.body.classList.toggle('compact',!['landing','explore'].includes(window.entryStage));document.querySelector('#entry').style.display=window.entryStage==='landing'?'block':'none';document.querySelector('.board').style.display=window.entryStage==='landing'?'none':'';document.querySelector('#status').style.display=window.entryStage==='landing'?'none':'';document.querySelector('.hint').textContent=window.entryStage==='landing'?'اسحب عشان تلف الكاميرا · قرّب بالزرارين · ابدأ التحقيق عشان تختار القضية':'اسحب عشان تلف الكاميرا · افتح الملفات من المشهد أو الأزرار';document.querySelector('.notice').style.display=window.entryStage==='landing'?'none':'';document.querySelector('h1').textContent=window.entryStage==='landing'?'الليل لسه مخلصش.':window.entryStage==='explore'?'أوضة الجريمة':'بلاغ · أجواء التحقيق';fit()});
+send('streamlit:componentReady',{apiVersion:1});fit();window.addEventListener('resize',fit);
+document.querySelector('#vol').oninput=e=>{if(master)master.gain.setTargetAtTime(Number(e.target.value)/100*.4,ctx.currentTime,.1)};document.addEventListener('visibilitychange',()=>{if(ctx&&audioOn){if(document.hidden){ctx.suspend();clearInterval(timer)}else{ctx.resume();clearInterval(timer);timer=setInterval(musicStep,1800)}}});
+setTimeout(()=>{let l=document.querySelector('#loading');if(!l.hidden)l.innerHTML='<b>المشهد لسه ما اتحمّلش.</b><p>ممكن الاتصال أو دعم الرسومات يكون السبب. تقدر تفتح كل الملفات من الأزرار تحت، أو تحدّث الصفحة.</p>'},15000);
+</script><script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js';
+try{const stage=document.querySelector('#stage');const renderer=new THREE.WebGLRenderer({antialias:true,alpha:false,powerPreference:'low-power'});renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.setClearColor(0x15221e);renderer.outputColorSpace=THREE.SRGBColorSpace;stage.prepend(renderer.domElement);const scene=new THREE.Scene();scene.fog=new THREE.Fog(0x15221e,12,28);const camera=new THREE.PerspectiveCamera(45,1,.1,80);let angle=.68,elev=.52,radius=10;const target=new THREE.Vector3(0,1.0,0);function cam(){camera.position.set(Math.sin(angle)*radius,1+Math.sin(elev)*radius,Math.cos(angle)*radius);camera.lookAt(target)}cam();const mat=(c,rough=.8,metal=0)=>new THREE.MeshStandardMaterial({color:c,roughness:rough,metalness:metal});const wood=mat(0x56402c),edge=mat(0x251e17),wall=mat(0x394b39),brass=mat(0xa58c48,.4,.6),paper=mat(0xd8c99c),green=mat(0x293a27),blue=mat(0x326b8c,.35);function mesh(geo,m,x,y,z){let a=new THREE.Mesh(geo,m);a.position.set(x,y,z);a.castShadow=true;a.receiveShadow=true;scene.add(a);return a}function box(w,h,d,m,x,y,z){return mesh(new THREE.BoxGeometry(w,h,d),m,x,y,z)}function cyl(a,b,h,m,x,y,z,n=24){return mesh(new THREE.CylinderGeometry(a,b,h,n),m,x,y,z)}
+scene.add(new THREE.HemisphereLight(0xc2d8b7,0x393122,2));const key=new THREE.DirectionalLight(0xffddb0,2.3);key.position.set(3,7,4);key.castShadow=true;key.shadow.mapSize.set(1024,1024);key.shadow.camera.left=-7;key.shadow.camera.right=7;key.shadow.camera.top=7;key.shadow.camera.bottom=-7;scene.add(key);const warm=new THREE.PointLight(0xffc372,22,9,2);warm.position.set(-1.6,3,0);scene.add(warm);const fill=new THREE.PointLight(0x7dbbce,8,10);fill.position.set(3,2,-3);scene.add(fill);
+box(11,.18,9,mat(0x716144),0,-.1,0);for(let i=-5;i<=5;i++)box(.02,.01,9,mat(0x3f3b2a),i,.005,0);box(11,4.6,.15,wall,0,2.25,-4.5);box(.15,4.6,9,wall,-5.5,2.25,0);for(let x=-5;x<5;x+=1.2){box(.035,2.2,.08,brass,x,1.2,-4.38)}box(11,.12,.2,edge,0,1.5,-4.35);box(2.2,3.5,.12,edge,-3.5,1.75,-4.36);box(1.9,3.2,.09,wood,-3.5,1.65,-4.25);cyl(.08,.08,.08,brass,-2.8,1.6,-4.13).rotation.x=Math.PI/2;box(2.8,2.8,.16,edge,2.8,2.8,-4.34);box(2.55,2.55,.17,mat(0x314d59,.3),2.8,2.8,-4.23);box(.1,2.55,.2,brass,2.8,2.8,-4.08);box(2.55,.1,.2,brass,2.8,2.8,-4.08);for(let x=1.6;x<4.1;x+=.28)box(.06,3.7,.28,mat(0x394335),x,2.3,-3.8);
+// Central desk, armchair, rug and period-inspired objects, all original simple geometry.
+box(5.0,.2,2.6,wood,0,1.5,.3);for(let x of [-2.1,2.1])for(let z of [-.65,1.25])box(.17,1.5,.17,edge,x,.7,z);box(1.0,.9,2.3,wood,-1.8,.95,.3);for(let y of [.7,1.0,1.3]){box(1.01,.02,2.3,edge,-1.8,y,.3);box(.3,.045,.08,brass,-1.8,y+.12,1.5)}box(1.5,.15,1.5,green,0,.7,-2.0);box(1.5,1.6,.2,green,0,1.5,-2.65);for(let x of [-.6,.6])for(let z of [-2.55,-1.5])box(.09,.7,.09,edge,x,.33,z);box(7,.012,5,mat(0x604638),0,.015,.5);box(6.7,.018,4.7,mat(0x34483c),0,.02,.5);box(6.2,.023,4.2,mat(0x654d39),0,.025,.5);
+let lampBase=cyl(.35,.42,.07,brass,-1.6,1.64,.0);cyl(.045,.05,1.1,brass,-1.6,2.2,0);let shade=mesh(new THREE.SphereGeometry(.6,24,12,0,Math.PI*2,0,Math.PI/2),green,-1.6,2.75,0);shade.scale.set(1,.6,.7);cyl(.13,.13,.12,mat(0xe8cb75),-1.6,2.65,0);
+const objects=[];function tag(o,id){o.userData.file=id;objects.push(o);return o}let cup=tag(cyl(.22,.18,.38,blue,.8,1.81,.8),'E07');let handle=tag(mesh(new THREE.TorusGeometry(.14,.035,8,20),blue,1.04,1.81,.8),'E07');handle.rotation.y=Math.PI/2;tag(cyl(.16,.16,.012,mat(0x43382b),.8,2.006,.8),'E07');let plate=tag(cyl(.36,.36,.035,paper,.8,1.62,.8),'E07');let clock=tag(cyl(.28,.28,.08,brass,1.6,1.68,.2),'E05');let face=tag(cyl(.24,.24,.009,paper,1.6,1.73,.2),'E05');tag(box(.025,.012,.17,edge,1.6,1.74,.13),'E05');tag(box(.12,.012,.025,edge,1.65,1.74,.2),'E05');tag(box(.2,.04,.9,edge,1.6,1.63,.2),'E05');let phone=tag(box(.85,.17,.6,edge,-.25,1.72,-.1),'E03');let dial=tag(cyl(.21,.21,.025,brass,-.25,1.82,-.05),'E03');for(let i=0;i<10;i++){let a=i/10*Math.PI*2;tag(cyl(.022,.022,.035,edge,-.25+Math.cos(a)*.15,1.84,-.05+Math.sin(a)*.15),'E03')}let receiver=tag(box(.95,.12,.14,edge,-.25,1.94,-.25),'E03');tag(cyl(.13,.13,.17,edge,-.65,1.86,-.25),'E03');tag(cyl(.13,.13,.17,edge,.15,1.86,-.25),'E03');let folder=tag(box(1.0,.035,.72,mat(0xb9a56d),-.6,1.635,1.0),'E01');folder.rotation.y=.13;let sheet=tag(box(.84,.015,.6,paper,-.6,1.66,1.0),'E01');sheet.rotation.y=.13;for(let z=.82;z<1.2;z+=.085){let line=tag(box(.55,.008,.009,mat(0x77735d),-.6,1.675,z),'E01');line.rotation.y=.13}box(.25,.1,.25,brass,2.1,1.67,-.5);cyl(.035,.035,.5,edge,2.1,1.9,-.5);
+const glow=new THREE.Mesh(new THREE.RingGeometry(.33,.38,32),new THREE.MeshBasicMaterial({color:0xedc77b,side:THREE.DoubleSide,transparent:true,opacity:.8}));glow.rotation.x=-Math.PI/2;glow.visible=false;scene.add(glow);window.addEventListener('objectchosen',e=>{let o=objects.find(x=>x.userData.file===e.detail);if(o){glow.position.set(o.position.x,2.04,o.position.z);glow.visible=true}});
+let down=null,drag=false,last=null;const cv=renderer.domElement;cv.setAttribute('aria-label','مشهد أوضة 3D. الملفات نفسها متاحة بأزرار تحت المشهد.');cv.addEventListener('pointerdown',e=>{down={x:e.clientX,y:e.clientY};last=down;drag=false;cv.setPointerCapture(e.pointerId)});cv.addEventListener('pointermove',e=>{if(!down)return;let dx=e.clientX-last.x,dy=e.clientY-last.y;if(Math.hypot(e.clientX-down.x,e.clientY-down.y)>5)drag=true;if(drag){angle-=dx*.006;elev=Math.max(.15,Math.min(.95,elev+dy*.004));cam()}last={x:e.clientX,y:e.clientY}});cv.addEventListener('pointerup',e=>{if(down&&!drag){let rect=cv.getBoundingClientRect(),v=new THREE.Vector2((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1),ray=new THREE.Raycaster();ray.setFromCamera(v,camera);let hit=ray.intersectObjects(objects)[0];if(hit)selectFile(hit.object.userData.file)}down=null});cv.addEventListener('pointercancel',()=>down=null);cv.addEventListener('wheel',e=>{e.preventDefault();radius=Math.max(6,Math.min(15,radius+e.deltaY*.008));cam()},{passive:false});document.querySelector('#zin').onclick=()=>{radius=Math.max(6,radius-1);cam()};document.querySelector('#zout').onclick=()=>{radius=Math.min(15,radius+1);cam()};document.querySelector('#reset').onclick=()=>{angle=.68;elev=.52;radius=10;cam()};new ResizeObserver(()=>{let w=stage.clientWidth,h=stage.clientHeight;renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix()}).observe(stage);let active=true;document.addEventListener('visibilitychange',()=>active=!document.hidden);renderer.setAnimationLoop(()=>{if(active&&!document.body.classList.contains('compact'))renderer.render(scene,camera)});cv.addEventListener('webglcontextlost',e=>{e.preventDefault();let l=document.querySelector('#loading');l.hidden=false;l.innerHTML='<b>الرسومات وقفت في المتصفح.</b><p>حدّث الصفحة أو كمّل من أزرار الملفات.</p>'});document.querySelector('#loading').hidden=true;window.balagh3d={scene,camera,renderer,objects,getView:()=>({angle,elev,radius}),project:id=>{let o=objects.find(x=>x.userData.file===id),v=o.position.clone().project(camera),r=cv.getBoundingClientRect();return{x:r.left+(v.x+1)/2*r.width,y:r.top+(1-v.y)/2*r.height}}};}
+catch(e){let l=document.querySelector('#loading');l.hidden=false;l.innerHTML='<b>مش قادرين نشغّل الـ3D على المتصفح ده.</b><p>جرّب متصفح أحدث، أو افتح الملفات من الأزرار تحت.</p>';console.error(e)}
+</script></html>
