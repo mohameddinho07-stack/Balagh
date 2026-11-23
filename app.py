@@ -11,6 +11,31 @@ st.markdown("""<style>
 h1, h2, h3, [data-testid="stCaptionContainer"] {text-align:right;direction:rtl;}
 [data-testid="stMainBlockContainer"] {max-width:1100px;}
 </style>""", unsafe_allow_html=True)
+from pathlib import Path
+import streamlit.components.v1 as components
+_entry_component = components.declare_component('balagh_entry', path=str(Path(__file__).parent/'entry_frontend'))
+phase = st.session_state.get('entry_phase', 'landing')
+entry_event = _entry_component(stage=phase, key='balagh_entry_persistent', default=None)
+if phase in ('landing','choose'):
+    st.markdown('<style>[data-testid="stAppViewContainer"]{background:#101b19;color:#eee5cf;}header[data-testid="stHeader"]{background:#101b19;}[data-testid="stMainBlockContainer"]{padding-top:1.4rem;}[data-testid="stMainBlockContainer"] h1,[data-testid="stMainBlockContainer"] h3,[data-testid="stCaptionContainer"]{color:#e7d5ae;}</style>', unsafe_allow_html=True)
+if phase == 'landing':
+    if entry_event == 'start':
+        st.session_state.entry_phase = 'choose'
+        st.rerun()
+    st.stop()
+if phase == 'choose':
+    st.title('اختار القضية')
+    st.caption('المتاح دلوقتي قضية واحدة كاملة. مش هنحط ملفات جديدة قبل ما تبقى قابلة للعب.')
+    with st.container(border=True):
+        st.subheader('بلاغ 001 • الغرفة المغلقة')
+        st.write('فندق النيل الملكي. باب متأمّن من جوّه، وأقوال محتاجة تتراجع على الدليل.')
+        if st.button('افتح ملف الغرفة المغلقة', type='primary'):
+            st.session_state.entry_phase = 'game'
+            st.rerun()
+    st.stop()
+if st.button('ارجع لاختيار القضية'):
+    st.session_state.entry_phase = 'choose'
+    st.rerun()
 st.title("بلاغ")
 st.caption("حكاية جريمة من خيالنا • جرّب تلعب لوحدك • اسأل كل الشخصيات بطريقتك أو بالأسئلة الجاهزة")
 mode = st.radio("تحب تلعب إزاي؟", ["🔍 العب لوحدك", "🎮 العب مع صحابك", "🏁 سباق محققين", "🕯️ أوضة 3D، تجربة"], horizontal=True)
