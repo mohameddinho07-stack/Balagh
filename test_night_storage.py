@@ -43,3 +43,17 @@ class Persistence(unittest.TestCase):
         self.assertEqual(h.view(tokens[1]),g.view(tokens[1]))
 
 if __name__=='__main__':unittest.main()
+
+class AllCaseConfrontations(unittest.TestCase):
+ def test_all_four_steps_every_case(self):
+  import game_engine as e,pilot
+  for cid,pid,first,last in [('001','nadine','n1','n5'),('002','bassem','s204','s214'),('003','dalia','b304','b314')]:
+   c=e.generate_case(cid);s=e.new_investigation()
+   while len(s['discovered'])<len(e.evidence_cards(c)):
+    for card in e.available_evidence(c,s):
+     if card['id'] not in s['discovered']:e.inspect_evidence(c,s,card['id'])
+   e.record_answer(c,s,pid,first)
+   for pair in pilot.CONFRONT[cid]:
+    kind,q=pilot.resolve_confront(c,s,pid,pair['statement'],pair['evidence'])
+    self.assertEqual(kind,'unlock');e.record_answer(c,s,pid,q['id'])
+   self.assertEqual(s['interviews'][-1]['question_id'],last)
