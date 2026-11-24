@@ -1,6 +1,6 @@
 import streamlit as st
 from game_engine import (generate_case, new_investigation, evidence_cards,
-                         available_questions, record_answer, finish_investigation, case_catalog, available_evidence, inspect_evidence, link_evidence)
+                         available_questions, record_answer, finish_investigation, case_catalog, available_evidence, inspect_evidence, link_evidence, timeline_entries)
 
 st.set_page_config(page_title="بلاغ", page_icon="🚨", layout="wide")
 st.markdown("""<style>
@@ -23,7 +23,7 @@ from pathlib import Path
 import streamlit.components.v1 as components
 _entry_component = components.declare_component('balagh_entry', path=str(Path(__file__).parent/'entry_frontend'/'entry_frontend'))
 phase = st.session_state.get('entry_phase', 'landing')
-entry_event = _entry_component(stage=phase, key='balagh_entry_persistent', default=None)
+entry_event = _entry_component(stage=phase, scene_id=(st.session_state.get('case') or {}).get('scene','hotel'), key='balagh_entry_persistent', default=None)
 if phase in ('landing','choose'):
     st.markdown('<style>[data-testid="stAppViewContainer"]{background:#101b19;color:#eee5cf;}header[data-testid="stHeader"]{background:#101b19;}[data-testid="stMainBlockContainer"]{padding-top:4.4rem;}[data-testid="stMainBlockContainer"] h1,[data-testid="stMainBlockContainer"] h3,[data-testid="stCaptionContainer"]{color:#e7d5ae;}</style>', unsafe_allow_html=True)
 if phase == 'landing':
@@ -218,7 +218,7 @@ with st.expander("اقرا البلاغ وحكاية اللي حصل"):
 crime_scene = components.declare_component('balagh_crime', path=str(Path(__file__).parent/'crime_frontend'/'crime_frontend'))
 scene_scope = '|'.join([case['id'], mode, str(room.get('me','')) if room_mode else state.setdefault('attempt_id',__import__('uuid').uuid4().hex)])
 scene_event = crime_scene(cards=available_evidence(case,state), locked_cards=[{'id':e['id'],'title':e['title'],'requires':e.get('requires',[])} for e in evidence_cards(case) if e not in available_evidence(case,state)], total=len(evidence_cards(case)), discovered=state['discovered'],
-    finished=state['finished'], link_feedback=st.session_state.get('link_feedback',''), allow_links=not room_mode, scope=scene_scope, location=public['location'],
+    timeline=timeline_entries(case,state), finished=state['finished'], link_feedback=st.session_state.get('link_feedback',''), allow_links=not room_mode, scope=scene_scope, location=public['location'],
     scene_id=case.get('scene','hotel'), reasoning=[{'id':x['id'],'title':x['title'],'text':x['text']} for x in case.get('reasoning',[]) if x['id'] in state.get('deductions',[])], deductions=state.get('deductions',[]), case_title=public['title'], victim=public['victim'], story=public['story'], people=[{'id':c['id'],'name':c['name'],'job':c['job'],'info':c['public_info'],
         'questions':[{'id':q['id'],'question':q['question']} for q in available_questions(c,state['discovered'])],
         'locked':len(c['interviews'])-len(available_questions(c,state['discovered'])),
