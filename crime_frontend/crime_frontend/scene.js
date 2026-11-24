@@ -33,11 +33,11 @@ function boot(){
   const c=document.createElement('canvas');c.width=256;c.height=384;const x=c.getContext('2d');x.clearRect(0,0,256,384);x.strokeStyle='#f4f1e6';x.lineWidth=7;x.lineJoin='round';
   x.beginPath();x.arc(128,52,32,0,7);x.stroke();x.beginPath();x.moveTo(98,92);x.lineTo(60,120);x.lineTo(30,230);x.moveTo(158,92);x.lineTo(196,120);x.lineTo(226,200);x.moveTo(98,92);x.lineTo(158,92);x.lineTo(150,210);x.lineTo(168,350);x.moveTo(106,210);x.lineTo(88,350);x.moveTo(106,210);x.lineTo(150,210);x.stroke();
   const outline=new THREE.Mesh(new THREE.PlaneGeometry(1.9,2.85),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(c),transparent:true,depthWrite:false}));outline.rotation.x=-Math.PI/2;outline.position.y=.012;g.add(outline);
-  const sheet=new THREE.MeshStandardMaterial({color:0xe9e4d3,roughness:.95});
-  const torso=add(new THREE.Mesh(new THREE.CapsuleGeometry(.22,.62,6,14),sheet));torso.rotation.x=Math.PI/2;torso.scale.set(1.15,1,.55);torso.position.set(0,.13,-.1);
-  const head=add(new THREE.Mesh(new THREE.SphereGeometry(.16,14,10),sheet));head.position.set(0,.1,-.78);head.scale.set(1,.8,1);
-  for(const sx of [-.12,.12]){const leg=add(new THREE.Mesh(new THREE.CapsuleGeometry(.09,.55,4,10),sheet));leg.rotation.x=Math.PI/2;leg.scale.set(1,1,.6);leg.position.set(sx,.07,.78)}
-  for(const sx of [-.34,.34]){const arm=add(new THREE.Mesh(new THREE.CapsuleGeometry(.07,.5,4,10),sheet));arm.rotation.x=Math.PI/2;arm.rotation.z=sx>0?-.25:.25;arm.scale.set(1,1,.6);arm.position.set(sx*1.05,.07,-.15)}
+  const sheet=new THREE.MeshStandardMaterial({color:0xeceee8,roughness:1});
+  // One draped cloth over the whole body: long low mound with soft peaks at head, shoulders and feet.
+  const mound=add(new THREE.Mesh(new THREE.SphereGeometry(1,24,14),sheet));mound.scale.set(.42,.17,1.05);mound.position.set(0,.06,0);
+  [[0,-.72,.13,.2],[0,-.1,.17,.36],[-.14,.7,.1,.17],[.14,.72,.1,.17]].forEach(([px,pz,h,r])=>{const k=add(new THREE.Mesh(new THREE.SphereGeometry(r,14,10),sheet));k.scale.set(1,h/r,1);k.position.set(px,.1+h*.5,pz)});
+  const edge=add(new THREE.Mesh(new THREE.TorusGeometry(.5,.012,6,32),new THREE.MeshStandardMaterial({color:0xb9c1c4,roughness:1})));edge.rotation.x=Math.PI/2;edge.scale.set(.85,2.1,1);edge.position.y=.03;
   const yellow=new THREE.MeshStandardMaterial({color:0xf2c230,roughness:.6});
   [[-1.1,-.4,'1'],[1.15,.5,'2'],[.9,-1.0,'3']].forEach(([mx,mz,n])=>{const t=add(new THREE.Mesh(new THREE.ConeGeometry(.12,.3,4),yellow));t.position.set(mx,.15,mz);const lc=document.createElement('canvas');lc.width=64;lc.height=64;const lx=lc.getContext('2d');lx.fillStyle='#f2c230';lx.fillRect(0,0,64,64);lx.fillStyle='#1d1d18';lx.font='bold 44px sans-serif';lx.textAlign='center';lx.fillText(n,32,48);const l=new THREE.Mesh(new THREE.PlaneGeometry(.22,.22),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(lc)}));l.position.set(mx,.34,mz);l.rotation.x=-.5;g.add(l)});
   const tapeM=new THREE.MeshBasicMaterial({color:0xf2c230});const post=new THREE.MeshStandardMaterial({color:0x2a2a25});
