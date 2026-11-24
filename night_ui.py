@@ -93,12 +93,35 @@ def _entry():
 
 
 @st.fragment(run_every=4)
+def _watch():
+    """Polls quietly. The screen is redrawn only when the room really changed, so a dropdown or
+    a half-picked accusation is never wiped by a timer tick."""
+    try:
+        v = _view()
+    except GameError:
+        return
+    if v is not None and v['rev'] != st.session_state.get('night_rev'):
+        st.rerun()
+
+
+@st.fragment(run_every=5)
+def _clock():
+    try:
+        v = _view()
+    except GameError:
+        return
+    if v and v.get('seconds_left') is not None:
+        st.caption('الوقت الباقي: ' + str(v['seconds_left']) + ' ثانية')
+
+
 def _room():
     try:
         v = _view()
     except GameError as e:
         st.warning(str(e))
         return
+    st.session_state['night_rev'] = v['rev'] if v else None
+    _watch()
     if v is None:
         st.warning('الأوضة خلصت أو اتقفلت.')
         if st.button('رجوع', key='night_back'):
@@ -198,7 +221,7 @@ def _room():
             if st.button('واجه الكارتين', key='night_challenge') and len(cids) == 2:
                 _try('challenge', dict(cards=cids))
         if v['seconds_left'] is not None:
-            st.caption('الوقت الباقي: ' + str(v['seconds_left']) + ' ثانية')
+            _clock()
         if v['host'] and st.button('خلّصوا الجولة', key='night_next'):
             _try('next')
     if ph == 'ended':

@@ -8,7 +8,7 @@ import time
 import urllib.request
 import urllib.error
 from cryptography.fernet import Fernet, InvalidToken
-from night import Game, GameError
+from night import Game, GameError, DEFAULTS
 
 
 def pack(game):
@@ -27,9 +27,28 @@ def unpack(data, clock=None):
     game = Game(clock=clock or time.time)
     vars(game).update(state)
     game.proposed = {(a, b): v for a, b, v in proposed}
+    _migrate(game)
     game.rng = random.Random()
     game.rng.setstate(tuples(rng))
     return game
+
+
+def _migrate(game):
+    """Read snapshots saved by the first version of the mode (one claimed place, no card flags).
+    Only the in-memory object changes; the stored row is untouched until a normal player action saves it."""
+    game.cfg = dict(DEFAULTS, **game.cfg)
+    for c in game.cards.values():
+        c.setdefault('masked', False)
+        c.setdefault('spoiled', False)
+    if game.truth and game.statements:
+        m = game.truth['m']
+        for name, claim in list(game.statements.items()):
+            if isinstance(claim, str):
+                route = list(game.truth['pos'][name])
+                route[m] = claim
+                game.statements[name] = route
+    if any(c.get('spoiled') for c in game.cards.values()):
+        game.forge_used = True
 
 
 class DurableStore:
