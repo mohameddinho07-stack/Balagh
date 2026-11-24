@@ -264,7 +264,7 @@ st.caption(f"المكان: {public['location']} | اللي اتقتل: {public['
 with st.expander("اقرا البلاغ وحكاية اللي حصل"):
     st.info(public["story"])
 import importlib, pilot; importlib.reload(pilot)  # picks up data edits without a manual reboot
-from pilot import confront_only, intro_beats, mood as case_mood, confront_people, heard_statements, resolve_confront
+from pilot import next_step, confront_only, intro_beats, mood as case_mood, confront_people, heard_statements, resolve_confront
 _mood = case_mood(case['id'])
 if _mood:
     st.markdown('<div style="border-right:4px solid '+_mood['color']+';padding:.3rem .9rem;margin:.2rem 0 .6rem;opacity:.92">'+_mood['line']+'</div>', unsafe_allow_html=True)
@@ -294,6 +294,9 @@ if _beats and not state['discovered'] and not state['interviews'] and not state[
         st.session_state[_ikey+':done'] = True
         st.rerun()
     st.stop()
+_nh, _nd, _nc = next_step(case, state, evidence_cards, available_evidence, available_questions)
+if _nh:
+    st.markdown('<div style="border:1px solid #6c8067;background:#1a2d26;border-radius:10px;padding:.6rem .9rem;margin:.3rem 0 .8rem"><div style="opacity:.75;font-size:.85rem">خطوتك الجاية · فحصت '+str(_nc['evidence'])+' من '+str(_nc['evidence_total'])+' · سمعت '+str(_nc['asked'])+' رد</div><div style="font-weight:700;font-size:1.05rem;color:#e7d5ae">'+_nh+'</div><div style="opacity:.9">'+_nd+'</div></div>', unsafe_allow_html=True)
 # Each case owns its scene and public evidence. No truth or credentials cross to the browser.
 crime_scene = components.declare_component('balagh_crime', path=str(Path(__file__).parent/'crime_frontend'/'crime_frontend'))
 scene_scope = '|'.join([case['id'], mode, str(room.get('me','')) if room_mode else state.setdefault('attempt_id',__import__('uuid').uuid4().hex)])
