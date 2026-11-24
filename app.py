@@ -404,12 +404,12 @@ if wall.board_supported(case) and (not room_mode or room.get('mode','coop')=='co
         except ValueError as e:
             st.warning(str(e))
             return False
-    st.subheader('🧩 ملف القضية: الحيطة والخط الزمني والاستجواب')
-    st.caption('كل ملف فحصته وكل رد سمعته بيبقى كارت واحد في التلات أدوات. ثبّت الكروت على الحيطة، اربط اللي شايف إن بينهم تناقض، ورتّبهم على وقت الليلة. اللعبة مش هتقولك «غلط»: نظرية ثبتت بتتحول لكارت مواجهة، ونظرية مفتوحة بتفضل نوتة من غير أي خسارة. في التعاون، الحيطة والخط مشتركين مع صحابك.')
+    st.subheader('🧩 ملف القضية')
+    st.caption('١. ثبّت الأدلة على الحيطة  ٢. اربط اتنين بينهم تناقض  ٣. واجه المشتبه فيه')
     if st.session_state.get('board_feedback'):
         _kind, _text = st.session_state.pop('board_feedback')
         (st.success if _kind=='ok' else st.info)(_text)
-    tab_wall, tab_line, tab_inter = st.tabs(['📌 الحيطة', '🕒 الخط الزمني', '🎭 الاستجواب'])
+    tab_wall, tab_line, tab_inter = st.tabs(['📌 الحيطة', '🕒 الخط الزمني', '🎭 المواجهة'])
     with tab_wall:
         unpinned = [c for c in bcards if c['id'] not in bstate['pins']]
         if unpinned and not state['finished']:
@@ -448,33 +448,32 @@ if wall.board_supported(case) and (not room_mode or room.get('mode','coop')=='co
                 if not state['finished'] and st.button('امسح النظرية', key='unlink_'+str(i)):
                     _board_apply({'do':'unlink','index':i}); st.rerun()
     with tab_line:
-        st.caption('حرّك كروت الحيطة على وقت الليلة. الترتيب تفكيرك إنت، اللعبة مش بتحكم عليه. كل كارت واقف بوقته المكتوب عليه: لو رواية قفت جنب تسجيل مختلف، التعارض هيبان لك بنفسه.')
+        st.caption('الكروت اللي ثبّتها بتترتب هنا لوحدها على وقتها. مفيش حاجة تعملها. دوّر على حد بيقول وقت، ودليل بيقول وقت تاني.')
         anchors = timeline_entries(case, state)
         anchor_by_time = {}
         for a in anchors: anchor_by_time.setdefault(a['sort'], []).append(a)
+        no_time = []
+        by_slot = {}
+        for pid in bstate['pins']:
+            if pid not in by_id: continue
+            times = wall.card_times(case, by_id[pid])
+            if not times: no_time.append(pid); continue
+            for t in times:
+                by_slot.setdefault(t['time'], []).append((pid, t))
         for slot in wall.TIMELINE_SLOTS[case['id']]:
             rows = ['🔒 '+a['text'] for a in anchor_by_time.get(slot, [])]
-            for pid, s in bstate['placed'].items():
-                if s != slot or pid not in by_id: continue
-                badge = ''
-                times = wall.card_times(case, by_id[pid])
-                if times: badge = ' · ⏱ '+('، '.join(('بيقول ' if t['claim'] else '')+display_times(t['time']) for t in times))
-                rows.append('📌 '+_card_label(by_id[pid])+badge)
+            for pid, t in by_slot.get(slot, []):
+                rows.append('📌 '+_card_label(by_id[pid])+(' · بيقول إن ده كان '+display_times(t['time']) if t['claim'] else ''))
             if rows:
                 with st.container(border=True):
                     st.markdown('**'+display_times(slot)+'**')
                     for row in rows: st.write(row)
-        if not anchors and not bstate['placed']:
-            st.caption('افحص أدلة فيها أوقات وثبّت كروت على الحيطة، والخط هيملى.')
-        if bstate['pins'] and not state['finished']:
-            _tl_card = st.selectbox('كارت من الحيطة', bstate['pins'], format_func=lambda i: _card_label(by_id[i]), key='tl_card')
-            _tl_slot = st.selectbox('خانة الوقت', ['مش على الخط']+wall.TIMELINE_SLOTS[case['id']], format_func=lambda s: s if s=='مش على الخط' else display_times(s), key='tl_slot')
-            if st.button('ثبّت المكان على الخط', key='tl_place'):
-                if _tl_slot=='مش على الخط': _board_apply({'do':'unplace','card':_tl_card})
-                else: _board_apply({'do':'place','card':_tl_card,'slot':_tl_slot})
-                st.rerun()
+        if no_time:
+            st.caption('كروت من غير وقت: '+'، '.join(_card_label(by_id[p]) for p in no_time))
+        if not anchors and not bstate['pins']:
+            st.caption('لسه فاضي. افحص أدلة وثبّتها على الحيطة وهتظهر هنا.')
     with tab_inter:
-        st.caption('نظرية ثبتت بتتحول لكارت مواجهة. العبه على صاحبه: لو الكلام فعلًا متناقض هيتكسر ويديك رد جديد. ومفيش رد مهم بيضيع باختيار غلط؛ اللي بيرد عليك بيكرر كلامه وخلاص.')
+        st.caption('هنا بتواجه المشتبه فيه بالتناقض اللي ربطته. لو صح هيرد عليك برد جديد.')
         playable = False
         for t in bstate['theories']:
             th = wall.theory_lookup(case, t)
@@ -508,7 +507,7 @@ if wall.board_supported(case) and (not room_mode or room.get('mode','coop')=='co
                     _kind, _out = resolve_confront(case, state, person['id'], st_cards[0], ev_cards[0])
                     st.info(_out if _kind!='done' else _out['answer'])
         if not playable:
-            st.caption('لسه مفيش كروت مواجهة. اربط كلام حد سمعته بدليل فحصته على الحيطة؛ لو النظرية ثبتت هتلاقي الكارت هنا.')
+            st.caption('لسه مفيش مواجهة. اربط كلام حد سمعته بدليل فحصته في الحيطة.')
 
 solo_unit = room_mode and room["unit_size"]==1
 if state["finished"]:
