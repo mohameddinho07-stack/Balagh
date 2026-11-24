@@ -47,7 +47,7 @@ if phase == 'choose':
                 c,saved_state,saved_notes=import_dossier(upload.getvalue())
                 st.session_state.case=c;st.session_state.investigation=saved_state
                 st.session_state.detective_notes=saved_notes;st.session_state.entry_phase='game'
-                for k in ['mode_choice','previous_mode','ai_suspect','focus_person','solo_snapshot','last_scene_nonce','link_feedback']:
+                for k in ['mode_choice','previous_mode','ai_suspect','focus_person','solo_snapshot','last_scene_nonce','link_feedback','reveal_solution']:
                     st.session_state.pop(k,None)
                 st.rerun()
             except (ValueError,TypeError) as e:st.warning(str(e))
@@ -68,7 +68,7 @@ if phase == 'choose':
                 st.session_state.investigation = saved['state'] if saved else new_investigation()
                 st.session_state.detective_notes = saved.get('notes','') if saved else ''
                 st.session_state.entry_phase='game'
-                for k in ['previous_mode','mode_choice','ai_suspect','focus_person','solo_snapshot','last_scene_nonce','link_feedback']:
+                for k in ['previous_mode','mode_choice','ai_suspect','focus_person','solo_snapshot','last_scene_nonce','link_feedback','reveal_solution']:
                     st.session_state.pop(k,None)
                 st.rerun()
     st.caption('الأماكن الحقيقية إلهام للأجواء بس. المعسكر والمركب وكل الجرائم والشخصيات مؤلّفة. دي مش معلومات سفر أو تصريح زيارة.')
@@ -84,19 +84,24 @@ selected_case_id=st.session_state.get('case',{}).get('id','001') if st.session_s
 with st.expander("طريقة اللعب: فردي، مع صحابك، أو سباق"):
     if selected_case_id!='001':
         st.caption('القضية دي فردي دلوقتي. التعاوني والسباق شغالين في قضية الفندق بس، لحد ما قواعد السيرفر تتختبر للقضايا الجديدة.')
-    mode = st.radio("تحب تلعب إزاي؟", ["🔍 العب لوحدك", "🎮 العب مع صحابك", "🏁 سباق محققين"], horizontal=True, key='mode_choice', disabled=selected_case_id!='001')
+    mode = st.radio("تحب تلعب إزاي؟", ["🔍 العب لوحدك", "🎮 العب مع صحابك", "🏁 سباق محققين"], horizontal=True, key='mode_choice', disabled=selected_case_id!='001' or bool(st.session_state.get('room_token')))
 room_mode = mode != "🔍 العب لوحدك"
 race_mode = mode == "🏁 سباق محققين"
 room = None
 previous_mode = st.session_state.get('previous_mode')
 if previous_mode is not None and previous_mode != mode:
     if previous_mode == "🔍 العب لوحدك":
-        st.session_state.solo_snapshot = (st.session_state.get('case'), st.session_state.get('investigation'))
+        archive_solo()
+        st.session_state.solo_snapshot = (st.session_state.get('case'), st.session_state.get('investigation'),st.session_state.get('detective_notes',''))
     else:
-        old_case, old_state = st.session_state.get('solo_snapshot', (None, None))
+        snapshot=st.session_state.get('solo_snapshot', (None,None,''))
+        old_case, old_state=snapshot[:2]
+        st.session_state.detective_notes=snapshot[2] if len(snapshot)>2 else ''
         st.session_state.case = old_case
         st.session_state.investigation = old_state
 st.session_state.previous_mode = mode
+if st.session_state.get('room_token'):
+    st.caption('إنت جوه أوضة. اخرج منها على الجهاز ده الأول لو عايز تغيّر طريقة اللعب أو القضية.')
 if room_mode:
     from room_client import rpc, RoomError
     st.subheader("سباق محققين" if race_mode else "أوضة تحقيق ليك ولصاحبك")
@@ -163,7 +168,7 @@ if room_mode:
     room_watch()
     st.caption('التحديث كل 5 ثواني طول ما الصفحة مفتوحة. لو الخدمة المجانية وقفت، هتظهر رسالة بدل نجاح وهمي.')
     if st.button('اخرج من الأوضة على الجهاز ده'):
-        for k in [k for k in st.session_state if k.startswith('room_notes_')] + ['room_token','detective_notes','ai_suspect']:
+        for k in [k for k in st.session_state if k.startswith('room_notes_')] + ['room_token','ai_suspect']:
             st.session_state.pop(k,None)
         st.rerun()
     if race_mode:
