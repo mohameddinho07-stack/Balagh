@@ -16,7 +16,7 @@ def started():
 class AppFlowTests(unittest.TestCase):
     def test_playable_flows(self):
         a=started()
-        a.session_state['investigation']['discovered'].extend(['E01','E02','E03']);a.run()
+        a.session_state['investigation']['discovered'].extend(['E01','E02','E03']);a.session_state['stage']='accuse';a.run()
         next(x for x in a.selectbox if x.label=='مين اللي عملها؟').select('يوسف بيومي')
         a.multiselect[0].select('E03')
         a.checkbox[0].check()
@@ -32,7 +32,7 @@ class AppFlowTests(unittest.TestCase):
         assert not a.session_state.get('detective_notes','')
         
         a=started()
-        a.session_state['investigation']['discovered'].extend(['E06','E07','E08']);a.run()
+        a.session_state['investigation']['discovered'].extend(['E06','E07','E08']);a.session_state['stage']='accuse';a.run()
         next(x for x in a.selectbox if x.label=='مين اللي عملها؟').select('نادين مراد')
         for e in ['E06','E07','E08']: a.multiselect[0].select(e)
         a.checkbox[0].check()
@@ -49,12 +49,15 @@ class AppFlowTests(unittest.TestCase):
 
     def test_no_duplicate_legacy_presentations(self):
         a=started()
-        a.session_state['investigation']['discovered']=['E01','E02','E03'];a.run()
+        a.session_state['investigation']['discovered']=['E01','E02','E03'];a.session_state['stage']='notes';a.run()
         assert not any('نسخة نصية' in x.value or 'نسمع أقوالهم' in x.value for x in a.subheader)
         assert not any(x.key.startswith('inspect_') for x in a.button if x.key)
         assert any('اسأل بطريقتك' in x.value for x in a.subheader)
         assert any('نوتة التحقيق' in x.value for x in a.subheader)
+        assert not any('مين المتهم' in x.value for x in a.subheader)
+        a.session_state['stage']='accuse';a.run()
         assert any('مين المتهم' in x.value for x in a.subheader)
+        assert not any('نوتة التحقيق' in x.value for x in a.subheader)
 
     def test_solution_reveal_does_not_carry_between_cases(self):
         from game_engine import generate_case,new_investigation
@@ -104,12 +107,12 @@ class AppFlowTests(unittest.TestCase):
             self.assertFalse(a.exception)
 
     def test_new_attempt_has_no_stale_final_confirmation(self):
-        a=started();a.session_state['investigation']['discovered']=['E01','E02','E03'];a.run()
+        a=started();a.session_state['investigation']['discovered']=['E01','E02','E03'];a.session_state['stage']='accuse';a.run()
         next(x for x in a.selectbox if x.label=='مين اللي عملها؟').select('يوسف بيومي')
         a.multiselect[0].select('E03');a.checkbox[0].check()
         a.button(key='FormSubmitter:accusation-ثبّت الاتهام').click().run()
         next(b for b in a.button if b.label=='نجرّب من الأول').click().run()
-        a.session_state['investigation']['discovered']=['E01','E02','E03'];a.run()
+        a.session_state['investigation']['discovered']=['E01','E02','E03'];a.session_state['stage']='accuse';a.run()
         self.assertIsNone(next(x for x in a.selectbox if x.label=='مين اللي عملها؟').value)
         self.assertFalse(next(x for x in a.checkbox if x.label.startswith('أيوه، ده')).value)
         self.assertEqual(a.multiselect[0].value,[])
@@ -121,7 +124,7 @@ class AppFlowTests(unittest.TestCase):
         a.secrets['GROQ_API_KEY'] = 'test'
         a.session_state['entry_phase'] = 'game'
         a.run(); next(x for x in a.button if x.label=='🚔 يلا نحقق').click().run(); skip_intro(a)
-        a.session_state['investigation']['discovered']=['E01'];a.run()
+        a.session_state['investigation']['discovered']=['E01'];a.session_state['stage']='notes';a.run()
         selector = a.selectbox(key='ai_suspect')
         assert selector.value is None
         assert selector.options == ['آسر منصور','ليلى الديب','يوسف بيومي','نادين مراد']
