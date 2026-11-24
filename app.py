@@ -259,7 +259,7 @@ st.subheader(f"بلاغ {case['id']} • {public['title']}")
 st.caption(f"المكان: {public['location']} | اللي اتقتل: {public['victim']}")
 with st.expander("اقرا البلاغ وحكاية اللي حصل"):
     st.info(public["story"])
-from pilot import intro_beats, mood as case_mood, confront_people, heard_statements, resolve_confront
+from pilot import confront_only, intro_beats, mood as case_mood, confront_people, heard_statements, resolve_confront
 _mood = case_mood(case['id'])
 if _mood:
     st.markdown('<div style="border-right:4px solid '+_mood['color']+';padding:.3rem .9rem;margin:.2rem 0 .6rem;opacity:.92">'+_mood['line']+'</div>', unsafe_allow_html=True)
@@ -286,8 +286,8 @@ scene_scope = '|'.join([case['id'], mode, str(room.get('me','')) if room_mode el
 scene_event = crime_scene(cards=available_evidence(case,state), locked_cards=[{'id':e['id'],'title':e['title'],'requires':e.get('requires',[])} for e in evidence_cards(case) if e not in available_evidence(case,state)], total=len(evidence_cards(case)), discovered=state['discovered'],
     timeline=timeline_entries(case,state), finished=state['finished'], link_feedback=st.session_state.get('link_feedback',''), allow_links=not room_mode, scope=scene_scope, location=public['location'],
     scene_id=case.get('scene','hotel'), reasoning=[{'id':x['id'],'title':x['title'],'text':x['text']} for x in case.get('reasoning',[]) if x['id'] in state.get('deductions',[])], deductions=state.get('deductions',[]), case_title=public['title'], victim=public['victim'], story=public['story'], people=[{'id':c['id'],'name':c['name'],'job':c['job'],'info':c['public_info'],
-        'questions':[{'id':q['id'],'question':q['question']} for q in available_questions(c,state['discovered'])],
-        'locked':len(c['interviews'])-len(available_questions(c,state['discovered'])),
+        'questions':[{'id':q['id'],'question':q['question']} for q in available_questions(c,state['discovered']) if q['id'] not in confront_only(case['id'])],
+        'locked':len([q for q in c['interviews'] if q['id'] not in confront_only(case['id'])])-len([q for q in available_questions(c,state['discovered']) if q['id'] not in confront_only(case['id'])]),
         'answers':[a for a in state['interviews'] if a['suspect']==c['name']]} for c in case['characters']], key='crime_scene_'+scene_scope, default=None)
 if isinstance(scene_event, dict) and scene_event.get('nonce') != st.session_state.get('last_scene_nonce'):
     st.session_state.last_scene_nonce = scene_event.get('nonce')
