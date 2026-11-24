@@ -93,9 +93,9 @@ INCLUDING ANY GENERAL, SPECIAL, INDIRECT, INCIDENTAL, OR CONSEQUENTIAL
 DAMAGES, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF THE USE OR INABILITY TO USE THE FONT SOFTWARE OR FROM
 OTHER DEALINGS IN THE FONT SOFTWARE.
-</pre></dialog></main><script>
+</pre></dialog></main><script src="ambience_hankorab.js"></script><script>
 let ctx,master,audioOn=false,timer,userMuted=false,note=0,scene='menu',phase='landing',built={},cur=null,wnoise=null;
-const TRIM={menu:1,hotel:1.7,hankorab:1.35,nasser:1.45};
+const TRIM={menu:1,hotel:1.7,hankorab:1,nasser:1.45};
 const NAMES={menu:'بلاغ',hotel:'هدوء الفندق',hankorab:'هوا حنكوراب',nasser:'ليل البحيرة'};
 const TONES=[146.83,164.81,155.56,130.81,146.83,196,164.81,130.81];
 const snd=document.querySelector('#sound'),vol=document.querySelector('#vol');
@@ -113,12 +113,11 @@ const BUILD={
  menu(c,nb,out){tone(c,73.416,.09,out);tone(c,110.05,.06,out);bed(c,nb,'lowpass',450,.7,.035,out,.05,.012);let n=0,next=0;return(a,b)=>{if(next<a)next=a;while(next<b){note1(c,next,TONES[n++%TONES.length],.17,out);next+=2.4}}},
  hotel(c,nb,out){tone(c,55,.05,out);tone(c,82.4,.03,out);bed(c,nb,'lowpass',320,.7,.05,out,.06,.015);let n=0,next=0;return(a,b)=>{if(next<a)next=a+1;while(next<b){note1(c,next,TONES[n++%TONES.length]*.5,.07,out,4.5);next+=7+Math.random()*4}}},
  hankorab(c,nb,out){
-  // desert wind: band noise whose centre and level drift slowly
-  const w=bed(c,nb,'bandpass',520,.8,.32,out,.09,.14);lfo(c,.06,260,w.f.frequency);
-  // calm waves: two swells of low noise, plus faint foam hiss on the crest
-  bed(c,nb,'lowpass',380,.6,.38,out,.11,.28);
-  bed(c,nb,'highpass',2600,.5,.012,out,.11,.01);
-  let next=0,flip=0;return(a,b)=>{if(next<a)next=a+.5;while(next<b){chirp(c,next,flip++%2?4700:4950,.032,out);next+=1.3+Math.random()*1.7}}},
+  // Real CC0 field recordings (desert wind, calm sea, soft night crickets) mixed offline into one 36 s seamless loop. No synthesis.
+  const d=window.AMB_HANKORAB;if(!d)return()=>{};
+  try{const bin=atob(d.split(',')[1]),u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);
+  c.decodeAudioData(u.buffer).then(buf=>{const s=c.createBufferSource();s.buffer=buf;s.loop=true;s.connect(out);s.start()}).catch(()=>{})}catch(e){}
+  return()=>{}},
  nasser(c,nb,out){tone(c,65.4,.05,out);bed(c,nb,'lowpass',300,.7,.34,out,.2,.2);bed(c,nb,'bandpass',380,.8,.12,out,.05,.05);let n=0,next=0;return(a,b)=>{if(next<a)next=a+2;while(next<b){note1(c,next,TONES[n++%TONES.length]*.5,.06,out,5);next+=9+Math.random()*5}}}
 };
 function ensureAudio(){if(ctx)return;ctx=new(window.AudioContext||window.webkitAudioContext)();master=ctx.createGain();master.gain.value=masterLevel();master.connect(ctx.destination);wnoise=noiseBuf(ctx);ctx.onstatechange=soundLabel;applyTheme()}
