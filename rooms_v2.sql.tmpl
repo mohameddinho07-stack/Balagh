@@ -28,6 +28,7 @@ revoke all on function public.balagh_catalog() from public,anon,authenticated;
 create or replace function public.balagh_action(s jsonb, action text, args jsonb, cat jsonb)
 returns jsonb language plpgsql set search_path=public,pg_temp as $fn$
 declare ch jsonb; q jsonb; entry jsonb; turn jsonb; topic text; answer text; history jsonb; rule jsonb;
+ b jsonb; card text; cards jsonb; match jsonb; slot text; idx int;
  now_seconds numeric:=extract(epoch from clock_timestamp());
 begin
  if s->>'finished'='true' then raise exception 'التحقيق بتاعك خلص'; end if;
@@ -66,6 +67,48 @@ begin
    s:=s||jsonb_build_object('ai_interviews',history||jsonb_build_array(turn),'ai_last_attempt',now_seconds);
   end if;
  elsif action='hint' then s:=jsonb_set(s,'{hints_used}',to_jsonb((s->>'hints_used')::int+1));
+ elsif action='board' then
+  -- Investigation board pilot: pins, theory links and timeline placements live in s->'board'.
+  -- Card sets are compared by containment both ways, never by order.
+  b:=coalesce(s->'board','{"pins":[],"theories":[],"placed":{}}'::jsonb);
+  if jsonb_typeof(b->'pins') is distinct from 'array' or jsonb_typeof(b->'theories') is distinct from 'array' or jsonb_typeof(b->'placed') is distinct from 'object' then raise exception 'حالة الحيطة مش سليمة'; end if;
+  if args->>'do'='pin' then
+   card:=coalesce(args->>'card','');
+   if not (((cat->'evidence') ? card and (s->'discovered') ? card) or exists(select 1 from jsonb_array_elements(s->'interviews') v where v->>'question_id'=card)) then raise exception 'الكارت ده لسه مش عندك'; end if;
+   if not ((b->'pins') ? card) then
+    if jsonb_array_length(b->'pins')>=40 then raise exception 'الحيطة مليانة'; end if;
+    b:=jsonb_set(b,'{pins}',(b->'pins')||jsonb_build_array(card));
+   end if;
+  elsif args->>'do'='unpin' then
+   card:=coalesce(args->>'card','');
+   b:=jsonb_set(b,'{pins}',coalesce((select jsonb_agg(v) from jsonb_array_elements_text(b->'pins') v where v<>card),'[]'::jsonb));
+   b:=jsonb_set(b,'{placed}',(b->'placed')-card);
+  elsif args->>'do'='link' then
+   if jsonb_typeof(args->'cards') is distinct from 'array' then raise exception 'اختار كارتين أو تلاتة'; end if;
+   select jsonb_agg(distinct v) into cards from jsonb_array_elements_text(args->'cards') v;
+   if cards is null or jsonb_array_length(cards) not between 2 and 3 then raise exception 'اختار كارتين أو تلاتة'; end if;
+   if not ((b->'pins') @> cards) then raise exception 'اختار كروت مثبتة على الحيطة'; end if;
+   if exists(select 1 from jsonb_array_elements(b->'theories') t where (t->'cards') @> cards and cards @> (t->'cards')) then raise exception 'النظرية دي متسجلة خلاص'; end if;
+   if jsonb_array_length(b->'theories')>=30 then raise exception 'وصلت لحد النظريات'; end if;
+   select value into match from jsonb_array_elements(coalesce(cat->'theories','[]'::jsonb)) where (value->'cards') @> cards and cards @> (value->'cards');
+   if match is null then
+    b:=jsonb_set(b,'{theories}',(b->'theories')||jsonb_build_array(jsonb_build_object('cards',cards,'status','open')));
+   else
+    b:=jsonb_set(b,'{theories}',(b->'theories')||jsonb_build_array(jsonb_build_object('cards',cards,'status','holds','theory_id',match->>'id')));
+   end if;
+  elsif args->>'do'='unlink' then
+   idx:=coalesce((args->>'index')::int,-1);
+   if idx<0 or idx>=jsonb_array_length(b->'theories') then raise exception 'النظرية دي مش موجودة'; end if;
+   b:=jsonb_set(b,'{theories}',(b->'theories')-idx);
+  elsif args->>'do'='place' then
+   card:=coalesce(args->>'card',''); slot:=coalesce(args->>'slot','');
+   if not ((b->'pins') ? card) then raise exception 'ثبّت الكارت على الحيطة الأول'; end if;
+   if not exists(select 1 from jsonb_array_elements_text(coalesce(cat->'slots','[]'::jsonb)) v where v=slot) then raise exception 'الخانة دي مش على الخط'; end if;
+   b:=jsonb_set(b,'{placed}',jsonb_set(b->'placed',array[card],to_jsonb(slot)));
+  elsif args->>'do'='unplace' then
+   b:=jsonb_set(b,'{placed}',(b->'placed')-coalesce(args->>'card',''));
+  else raise exception 'تحديث مش مسموح'; end if;
+  s:=jsonb_set(s,'{board}',b);
  else raise exception 'تحديث مش مسموح'; end if;
  return s;
 end $fn$;
@@ -155,6 +198,13 @@ begin
    if shared and (payload->>'revision')::bigint is distinct from (u->>'rev')::bigint then raise exception 'في تحديث جديد، حدّث الأوضة'; end if;
    s:=public.balagh_action(s,op,payload,cat);
    u:=jsonb_build_object('investigation',s,'proposal',null,'approvals','[]'::jsonb,'rev',(u->>'rev')::bigint+1);
+   update public.rooms set units=jsonb_set(units,array[ukey],u),revision=revision+1 where id=r.id returning * into r;
+  elsif op='board' then
+   if r.status='finished' then raise exception 'السباق أو التحقيق خلص'; end if;
+   if not r.started then raise exception 'استنى صاحب الأوضة يبدأ'; end if;
+   if shared and (payload->>'revision')::bigint is distinct from (u->>'rev')::bigint then raise exception 'في تحديث جديد، حدّث الأوضة'; end if;
+   s:=public.balagh_action(s,op,payload,cat);
+   u:=jsonb_set(jsonb_set(u,'{investigation}',s),'{rev}',to_jsonb((u->>'rev')::bigint+1));
    update public.rooms set units=jsonb_set(units,array[ukey],u),revision=revision+1 where id=r.id returning * into r;
   elsif op in ('propose','accuse','approve') then
    if r.status='finished' or s->>'finished'='true' then raise exception 'قرارك الأخير اتسجل أو السباق خلص'; end if;
