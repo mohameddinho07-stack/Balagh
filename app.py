@@ -48,8 +48,8 @@ if phase == 'choose':
     st.markdown('<div style="border:1px solid #6c8067;border-radius:10px;padding:14px 16px;margin:6px 0 14px;background:#1a2d26;text-align:right"><div style="color:#d9b45f;font-size:0.8rem;letter-spacing:1px">مكتب البلاغات · الدور التالت</div><div style="font-size:1.5rem;font-weight:700;color:#eee5cf;margin:4px 0">نوّرت مكتبك يا باشا</div><div style="color:#c9d2c0">فيه ٣ بلاغات على المكتب مستنيين حد يفتحهم. اختار طريقة الشغل، وبعدين خد ملف واحد.</div></div>', unsafe_allow_html=True)
     _MODE_LIST = ["🔍 العب لوحدك", "🤝 تعاون", "🏁 سباق فردي", "⚔️ سباق فرق"]
     st.markdown('**١) تحب تشتغل إزاي؟**')
-    _pick = st.radio('طريقة اللعب', _MODE_LIST, key='chooser_mode', label_visibility='collapsed')
-    st.caption({_MODE_LIST[0]:'إنت لوحدك قدام الملف. بيتحفظ طول الجلسة.',_MODE_LIST[1]:'٢ لـ ١٠ محققين على نفس الملف، أدلة وأقوال مشتركة. هتعمل أوضة بكود وتبعته لصحابك.',_MODE_LIST[2]:'كل محقق لوحده على نفس القضية، وأول حل صح يكسب.',_MODE_LIST[3]:'فرق ضد بعض على نفس القضية.'}[_pick])
+    _pick = st.radio('طريقة اللعب', _MODE_LIST, key='chooser_mode', label_visibility='collapsed', format_func=lambda m:{_MODE_LIST[0]:'🔍 فردي · إنت لوحدك',_MODE_LIST[1]:'🤝 مع بعض · زوجي أو جروب (٢ لـ ١٠)',_MODE_LIST[2]:'🏁 واحد ضد واحد، أو كل واحد ضد الباقي',_MODE_LIST[3]:'⚔️ فريق ضد فريق · ٢ ضد ٢ وأكتر'}[m])
+    st.caption({_MODE_LIST[0]:'إنت لوحدك قدام الملف. بيتحفظ طول الجلسة.',_MODE_LIST[1]:'٢ لـ ١٠ محققين على نفس الملف، أدلة وأقوال مشتركة. هتعمل أوضة بكود وتبعته لصحابك.',_MODE_LIST[2]:'كل محقق لوحده على نفس القضية: ١ ضد ١ أو أكتر. أول حل صح يكسب.',_MODE_LIST[3]:'فرق ضد بعض على نفس القضية: ٢ ضد ٢ أو ٣ ضد ٣ وهكذا. الأدلة مشتركة جوه الفريق.'}[_pick])
     st.markdown('**٢) اختار الملف**')
     for item in case_catalog():
         with st.container(border=True):
