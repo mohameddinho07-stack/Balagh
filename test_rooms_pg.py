@@ -163,6 +163,41 @@ class Mode(unittest.TestCase):
             assert v['status'] == 'finished' and v['winner_unit'] == 't2'
         self.fail('inspect', t1[0], revision=0, evidence='E02')
 
+    def test_board_op(self):
+        a = self.call('create', name='أ', mode='coop', case='001', max_players=2)
+        toks = [a['token'], self.call('join', code=a['code'], name='ب')['token']]
+        urev = lambda t: self.call('read', t)['urev']
+        # Cards must be earned before they can be pinned.
+        self.fail('board', toks[0], revision=0, **{'do': 'pin', 'card': 'E06'})
+        self.call('inspect', toks[0], revision=urev(toks[0]), evidence='E06')
+        self.call('interview', toks[0], revision=urev(toks[0]), suspect='nadine', topic='n1')
+        self.call('board', toks[0], revision=urev(toks[0]), **{'do': 'pin', 'card': 'E06'})
+        mate = self.call('read', toks[1])
+        assert mate['state']['board']['pins'] == ['E06'], mate['state'].get('board')
+        self.fail('board', toks[1], revision=0, **{'do': 'pin', 'card': 'n1'})  # stale revision
+        self.call('board', toks[1], revision=urev(toks[1]), **{'do': 'pin', 'card': 'n1'})
+        # An authored confrontation pair holds, a random pair stays open, duplicates are refused.
+        r = self.call('board', toks[0], revision=urev(toks[0]), **{'do': 'link', 'cards': ['n1', 'E06']})
+        assert r['state']['board']['theories'][0]['status'] == 'holds'
+        assert r['state']['board']['theories'][0]['theory_id'] == 'cf_n1'
+        self.fail('board', toks[0], revision=urev(toks[0]), **{'do': 'link', 'cards': ['E06', 'n1']})
+        self.call('inspect', toks[0], revision=urev(toks[0]), evidence='E07')
+        self.call('board', toks[0], revision=urev(toks[0]), **{'do': 'pin', 'card': 'E07'})
+        r = self.call('board', toks[0], revision=urev(toks[0]), **{'do': 'link', 'cards': ['n1', 'E07']})
+        assert r['state']['board']['theories'][1]['status'] == 'open'
+        # Timeline placement with slot validation.
+        self.fail('board', toks[0], revision=urev(toks[0]), **{'do': 'place', 'card': 'n1', 'slot': '25:00'})
+        r = self.call('board', toks[0], revision=urev(toks[0]), **{'do': 'place', 'card': 'n1', 'slot': '22:00'})
+        assert r['state']['board']['placed'] == {'n1': '22:00'}
+        # Board actions never clear a pending accusation proposal.
+        self.call('propose', toks[0], suspect='نادين مراد', evidence=['E06', 'E07'])
+        self.call('board', toks[1], revision=urev(toks[1]), **{'do': 'unplace', 'card': 'n1'})
+        assert self.call('read', toks[0])['proposal'] is not None
+        # Unpin removes the card from the wall and the line; the theory log stays.
+        r = self.call('board', toks[0], revision=urev(toks[0]), **{'do': 'unpin', 'card': 'n1'})
+        assert r['state']['board']['pins'] == ['E06', 'E07'] and 'n1' not in r['state']['board']['placed']
+        assert len(r['state']['board']['theories']) == 2
+
     def test_server_rules(self):
         a = self.call('create', name='أ', mode='coop', case='T99')
         self.fail('create', name='أ', mode='coop', case='NOPE')
