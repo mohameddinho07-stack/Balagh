@@ -270,6 +270,15 @@ if _beats and not state['discovered'] and not state['interviews'] and not state[
     _step = min(st.session_state.get(_ikey, 0), len(_beats)-1)
     for _who, _line in _beats[:_step+1]:
         st.markdown('**'+_who+':** '+_line)
+    _first = [e for e in available_evidence(case,state) if e['id'] not in state['discovered']]
+    if _step == len(_beats)-1 and _first and not state['finished']:
+        # First action: open the first public evidence through the same checked path as the scene.
+        if st.button('🔍 افحص أول دليل: '+_first[0]['title'], key=_ikey+':first', type='primary'):
+            persist_room('inspect', {'evidence':_first[0]['id']})
+            if not room_mode:
+                inspect_evidence(case,state,_first[0]['id'])
+            st.session_state[_ikey+':done'] = True
+            st.rerun()
     _c1, _c2 = st.columns(2)
     if _c1.button('ابدأ التحقيق' if _step == len(_beats)-1 else 'كمّل', key=_ikey+':next', type='primary'):
         if _step == len(_beats)-1:
