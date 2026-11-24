@@ -27,7 +27,7 @@ from pathlib import Path
 import streamlit.components.v1 as components
 _entry_component = components.declare_component('balagh_entry', path=str(Path(__file__).parent/'entry_frontend'/'entry_frontend'))
 phase = st.session_state.get('entry_phase', 'landing')
-entry_event = _entry_component(stage=phase, scene_id=(st.session_state.get('case') or {}).get('scene','hotel'), key='balagh_entry_persistent', default=None)
+entry_event = _entry_component(stage=phase, scene_id=((st.session_state.get('case') or {}).get('scene','hotel') if phase=='game' else 'menu'), key='balagh_entry_persistent', default=None)
 if phase in ('landing','choose'):
     st.markdown('<style>[data-testid="stAppViewContainer"]{background:#101b19;color:#eee5cf;}header[data-testid="stHeader"]{background:#101b19;}[data-testid="stMainBlockContainer"]{padding-top:4.4rem;}[data-testid="stMainBlockContainer"] h1,[data-testid="stMainBlockContainer"] h3,[data-testid="stCaptionContainer"]{color:#e7d5ae;}</style>', unsafe_allow_html=True)
 if phase == 'landing':
