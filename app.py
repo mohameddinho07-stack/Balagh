@@ -43,18 +43,6 @@ def archive_solo():
             'notes':st.session_state.get('detective_notes','')}
 
 if phase == 'choose':
-    with st.expander('عندك ملف حفظ؟ كمّل من مكانك'):
-        upload=st.file_uploader('ملف حفظ بلاغ للفردي، مش مفتاح أوضة',type=['json'],max_upload_size=1)
-        if st.button('افتح ملف الحفظ',disabled=upload is None):
-            try:
-                from dossier import import_dossier
-                c,saved_state,saved_notes=import_dossier(upload.getvalue())
-                st.session_state.case=c;st.session_state.investigation=saved_state
-                st.session_state.detective_notes=saved_notes;st.session_state.entry_phase='game'
-                for k in ['mode_choice','previous_mode','ai_suspect','focus_person','solo_snapshot','last_scene_nonce','link_feedback','reveal_solution']:
-                    st.session_state.pop(k,None)
-                st.rerun()
-            except (ValueError,TypeError) as e:st.warning(str(e))
     from brand import wordmark_html
     st.markdown(wordmark_html(), unsafe_allow_html=True)
     st.title('اختار البلاغ')
@@ -78,6 +66,18 @@ if phase == 'choose':
                     st.session_state.pop(k,None)
                 st.rerun()
     st.caption('الأماكن الحقيقية إلهام للأجواء بس. المخيم والمركب وكل الجرائم والشخصيات مؤلّفة. دي مش معلومات سفر أو تصريح زيارة.')
+    with st.expander('عندك ملف حفظ؟ كمّل من مكانك'):
+        upload=st.file_uploader('ملف حفظ بلاغ للفردي، مش مفتاح أوضة',type=['json'],max_upload_size=1)
+        if st.button('افتح ملف الحفظ',disabled=upload is None):
+            try:
+                from dossier import import_dossier
+                c,saved_state,saved_notes=import_dossier(upload.getvalue())
+                st.session_state.case=c;st.session_state.investigation=saved_state
+                st.session_state.detective_notes=saved_notes;st.session_state.entry_phase='game'
+                for k in ['mode_choice','previous_mode','ai_suspect','focus_person','solo_snapshot','last_scene_nonce','link_feedback','reveal_solution']:
+                    st.session_state.pop(k,None)
+                st.rerun()
+            except (ValueError,TypeError) as e:st.warning(str(e))
     st.stop()
 if st.button('ارجع لاختيار القضية'):
     archive_solo()
