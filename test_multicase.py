@@ -55,3 +55,14 @@ class MultiCaseTests(unittest.TestCase):
             self.assertTrue(entries)
             self.assertTrue(all(set(x['evidence'])<=set(s['discovered']) for x in entries))
             self.assertEqual([x['sort'] for x in entries],sorted(x['sort'] for x in entries))
+
+    def test_ai_cannot_restore_denial_after_confrontation(self):
+        from ai_interrogation import ask_suspect
+        for cid,pid,confront,first,marker in [('002','bassem','s206','s204','الفانوس في الأول'),('003','dalia','b306','b304','الماكينات في الأول')]:
+            c=generate_case(cid);s=new_investigation()
+            while len(s['discovered'])<9:
+                for e in available_evidence(c,s):
+                    if e['id'] not in s['discovered']:inspect_evidence(c,s,e['id'])
+            record_answer(c,s,pid,confront)
+            turn=ask_suspect(c,s,pid,'قولت كنت فين؟','test',selector=lambda a,b:first,now=100)
+            self.assertIn(marker,turn['answer'])
