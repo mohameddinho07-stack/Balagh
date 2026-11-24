@@ -19,8 +19,13 @@ button,[data-baseweb="select"]>div,textarea,input,[data-testid="stExpander"]{bac
 [data-testid="stAlert"],[data-testid="stForm"]{background:#1a2d26!important;color:#eee5cf!important;border-color:#6c8067!important;}
 [data-testid="stMarkdownContainer"],summary{color:#eee5cf;}
 </style>""", unsafe_allow_html=True)
-if st.query_params.get('lab') == 'killer':  # hidden mode, not in any menu
+if st.query_params.get('lab') == 'killer' or st.session_state.get('night_mode'):
     import night_ui
+    if st.button('ارجع لمكتب البلاغات', key='night_exit'):
+        st.session_state.pop('night_mode', None)
+        st.query_params.pop('lab', None)
+        st.session_state.entry_phase = 'choose'
+        st.rerun()
     night_ui.run()
     st.stop()
 from pathlib import Path
@@ -50,6 +55,12 @@ if phase == 'choose':
     st.markdown('**١) تحب تشتغل إزاي؟**')
     _pick = st.radio('طريقة اللعب', _MODE_LIST, key='chooser_mode', label_visibility='collapsed', format_func=lambda m:{_MODE_LIST[0]:'🔍 فردي · إنت لوحدك',_MODE_LIST[1]:'🤝 مع بعض · زوجي أو جروب (٢ لـ ١٠)',_MODE_LIST[2]:'🏁 واحد ضد واحد، أو كل واحد ضد الباقي',_MODE_LIST[3]:'⚔️ فريق ضد فريق · ٢ ضد ٢ وأكتر'}[m])
     st.caption({_MODE_LIST[0]:'إنت لوحدك قدام الملف. بيتحفظ طول الجلسة.',_MODE_LIST[1]:'٢ لـ ١٠ محققين على نفس الملف، أدلة وأقوال مشتركة. هتعمل أوضة بكود وتبعته لصحابك.',_MODE_LIST[2]:'كل محقق لوحده على نفس القضية: ١ ضد ١ أو أكتر. أول حل صح يكسب.',_MODE_LIST[3]:'فرق ضد بعض على نفس القضية: ٢ ضد ٢ أو ٣ ضد ٣ وهكذا. الأدلة مشتركة جوه الفريق.'}[_pick])
+    with st.container(border=True):
+        st.subheader('🎭 قاتل وظابط مباحث')
+        st.caption('٤ لـ ٧ صحاب في نفس المكان. اللعبة بتوزّع قاتل وظباط مباحث سرًا، وليلة جديدة كل مرة. لكل لاعب كود أوضة ومفتاح رجوع شخصي؛ الحفظ على السيرفر.')
+        if st.button('ابدأ ليلة جديدة أو ارجع لليلتك', key='open_night'):
+            st.session_state.night_mode = True
+            st.rerun()
     st.markdown('**٢) اختار الملف**')
     for item in case_catalog():
         with st.container(border=True):
