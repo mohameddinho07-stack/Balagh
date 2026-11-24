@@ -335,6 +335,10 @@ else:
 _STAGES.append(('accuse', 'الاتهام', bool(state['finished']), ('قرار واحد: مين، وإيه الأدلة اللي بتسنده.' if show_accuse else 'قرار واحد: مين، وإيه الأدلة اللي بتسنده. بيفتح بعد ٣ أدلة.') if not state['finished'] else 'القضية اتقفلت.'))
 _STAGES.append(('notes', 'ملفي', False, ''))
 _keys = [s[0] for s in _STAGES]
+if st.session_state.get('_stage_case', case['id']) != case['id']:
+    st.session_state['stage'] = 'scene'
+    st.session_state.pop('_stage_set', None)
+st.session_state['_stage_case'] = case['id']
 if '_stage_set' in st.session_state:
     _t = st.session_state.pop('_stage_set')
     if _t in _keys: st.session_state['stage'] = _t
