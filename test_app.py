@@ -47,6 +47,36 @@ class AppFlowTests(unittest.TestCase):
         assert any('نوتة التحقيق' in x.value for x in a.subheader)
         assert any('مين المتهم' in x.value for x in a.subheader)
 
+    def test_solution_reveal_does_not_carry_between_cases(self):
+        from game_engine import generate_case,new_investigation
+        a=AppTest.from_file('app.py')
+        a.session_state['entry_phase']='choose'
+        a.session_state['reveal_solution']=True
+        a.session_state['case']=generate_case('001')
+        a.session_state['investigation']=new_investigation()
+        a.run();a.button(key='open_case_002').click().run()
+        self.assertFalse(a.session_state.get('reveal_solution',False))
+        self.assertEqual(a.session_state['case']['id'],'002')
+        self.assertEqual(a.session_state['investigation']['discovered'],[])
+        self.assertFalse(a.exception)
+
+    def test_room_switch_preserves_solo_notes(self):
+        from unittest.mock import patch
+        from game_engine import new_investigation
+        a=started();a.session_state['detective_notes']='solo private';a.run()
+        a.secrets.update(SUPABASE_URL='https://test.invalid',SUPABASE_KEY='test')
+        room={'state':new_investigation(),'code':'TEST01','players':[{'name':'test','id':'p1'},{'name':'test2','id':'p2'}],'me':'p1','revision':0,'mode':'coop','notes':'','status':'active','proposal':None,'approvals':[]}
+        with patch('room_client.rpc',return_value=room):
+            a.radio(key='mode_choice').set_value('🎮 العب مع صحابك').run()
+            self.assertEqual(len(a.session_state['solo_snapshot']),3)
+            a.session_state['room_token']='test-token';a.run()
+            self.assertTrue(a.radio(key='mode_choice').disabled)
+            next(b for b in a.button if b.label=='اخرج من الأوضة على الجهاز ده').click().run()
+            self.assertFalse(a.radio(key='mode_choice').disabled)
+            a.radio(key='mode_choice').set_value('🔍 العب لوحدك').run()
+            self.assertEqual(a.session_state['detective_notes'],'solo private')
+            self.assertFalse(a.exception)
+
     def test_ai_has_equal_choices_and_no_default(self):
         from unittest.mock import patch
         from ai_interrogation import ask_suspect as real_ask
