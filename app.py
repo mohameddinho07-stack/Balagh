@@ -261,6 +261,7 @@ state = st.session_state.investigation
 public = case["public"]
 st.subheader(f"بلاغ {case['id']} • {public['title']}")
 st.caption(f"المكان: {public['location']} | اللي اتقتل: {public['victim']}")
+st.info(public['story'])
 import importlib, pilot; importlib.reload(pilot)  # picks up data edits without a manual reboot
 from pilot import next_step, confront_only, intro_beats, mood as case_mood, confront_people, heard_statements, resolve_confront
 _mood = case_mood(case['id'])
@@ -270,15 +271,6 @@ if _beats and not state['discovered'] and not state['interviews'] and not state[
     _step = min(st.session_state.get(_ikey, 0), len(_beats)-1)
     for _who, _line in _beats[:_step+1]:
         st.markdown('**'+_who+':** '+_line)
-    _first = [e for e in available_evidence(case,state) if e['id'] not in state['discovered']]
-    if _step == len(_beats)-1 and _first and not state['finished']:
-        # First action: open the first public evidence through the same checked path as the scene.
-        if st.button('🔍 افحص أول دليل: '+_first[0]['title'], key=_ikey+':first', type='primary'):
-            persist_room('inspect', {'evidence':_first[0]['id']})
-            if not room_mode:
-                inspect_evidence(case,state,_first[0]['id'])
-            st.session_state[_ikey+':done'] = True
-            st.rerun()
     _c1, _c2 = st.columns(2)
     if _c1.button('ابدأ التحقيق' if _step == len(_beats)-1 else 'كمّل', key=_ikey+':next', type='primary'):
         if _step == len(_beats)-1:
@@ -302,8 +294,6 @@ scene_event = crime_scene(cards=available_evidence(case,state), locked_cards=[{'
         'questions':[{'id':q['id'],'question':q['question']} for q in available_questions(c,state['discovered']) if q['id'] not in confront_only(case['id'])],
         'locked':len([q for q in c['interviews'] if q['id'] not in confront_only(case['id'])])-len([q for q in available_questions(c,state['discovered']) if q['id'] not in confront_only(case['id'])]),
         'answers':[a for a in state['interviews'] if a['suspect']==c['name']]} for c in case['characters']], key='crime_scene_'+scene_scope, default=None)
-with st.expander("اقرا البلاغ وحكاية اللي حصل"):
-    st.info(public["story"])
 if _mood:
     st.markdown('<div style="border-right:4px solid '+_mood['color']+';padding:.3rem .9rem;margin:.2rem 0 .6rem;opacity:.92">'+_mood['line']+'</div>', unsafe_allow_html=True)
 if isinstance(scene_event, dict) and scene_event.get('nonce') != st.session_state.get('last_scene_nonce'):
