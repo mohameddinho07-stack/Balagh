@@ -86,3 +86,33 @@ def resolve_confront(case, state, person_id, statement_id, evidence_id):
     if any(x['question_id'] == q['id'] for x in state['interviews']):
         return 'done', q
     return 'unlock', q
+
+
+def next_step(case, state, evidence_cards, available_evidence, available_questions):
+    """One clear next action, computed only from what the player may already see.
+
+    It reads the public prerequisites of files and questions, never the truth, so it
+    cannot point at the solution. Returns (headline, detail, counts).
+    """
+    done = set(state['discovered'])
+    heard = {x['question_id'] for x in state['interviews']}
+    cards = evidence_cards(case)
+    hidden = confront_only(case['id'])
+    counts = dict(evidence=len(done), evidence_total=len(cards), asked=len(heard))
+    if state.get('finished'):
+        return None, None, counts
+    todo = [e for e in available_evidence(case, state) if e['id'] not in done]
+    for c in (case['characters'] if done else []):
+        for q in available_questions(c, state['discovered']):
+            if q['id'] not in heard and q['id'] not in hidden:
+                return ('اسأل ' + c['name'], 'من «الأقوال»: «' + q['question'] + '»', counts)
+    if todo:
+        more = (' وفيه ' + str(len(todo) - 1) + ' ملف تاني متاح.') if len(todo) > 1 else ''
+        return ('افحص «' + todo[0]['title'] + '»',
+                'افتحه من «المكان» أو «المحضر»، اقراه، وسجّل إنك فحصته. كل فحص بيفتح أسئلة أو ملفات جديدة.' + more, counts)
+    for pair in CONFRONT.get(case['id'], []):
+        if pair['statement'] in heard and pair['evidence'] in done and pair['unlocks'] not in heard:
+            who = next((p['name'] for p in case['characters'] if p['id'] == pair['person']), '')
+            return ('واجه ' + who + ' بدليل', 'افتح «واجهه حد بدليل» تحت، واختار كلامه والدليل اللي فحصته.', counts)
+    return ('جمّعت اللي تقدر عليه',
+            'قارن أقوالهم بالأدلة، وارجع للأقوال لو حابب. لما تبقى مقتنع، اتهم من آخر الصفحة بالدليل اللي يسنده.', counts)
