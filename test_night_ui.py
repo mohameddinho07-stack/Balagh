@@ -1,5 +1,8 @@
 """UI-level secrecy: four real Streamlit sessions share one server store."""
 import unittest
+from unittest.mock import patch
+from night_store import DurableStore
+from test_night_store import MemoryRPC
 from streamlit.testing.v1 import AppTest
 
 ROLE_K = 'قاتل'
@@ -22,6 +25,11 @@ def fresh():
 
 class NightUI(unittest.TestCase):
     def test_roles_private_per_session(self):
+        backend=MemoryRPC()
+        store=DurableStore('x','x','test-master-for-ui-'*5,transport=backend)
+        mocking=patch('night_ui._store',return_value=store)
+        mocking.start()
+        self.addCleanup(mocking.stop)
         host = fresh()
         host.text_input(key='night_name').set_value('محمد')
         [b for b in host.button if b.label=='اعمل أوضة'][0].click().run()
