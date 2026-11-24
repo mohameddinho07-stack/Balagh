@@ -1,6 +1,7 @@
 import streamlit as st
 from game_engine import (generate_case, new_investigation, evidence_cards,
-                         available_questions, record_answer, finish_investigation, case_catalog, available_evidence, inspect_evidence, link_evidence, timeline_entries)
+                         available_questions, record_answer, finish_investigation, case_catalog, available_evidence, inspect_evidence, link_evidence, timeline_entries, display_times)
+import board as wall
 
 st.set_page_config(page_title="بلاغ", page_icon="🚨", layout="wide")
 st.markdown("""<style>
@@ -78,7 +79,7 @@ if phase == 'choose':
                 st.session_state.detective_notes = saved.get('notes','') if saved else ''
                 st.session_state.entry_phase='game'
                 st.session_state['_want_mode']=_pick
-                for k in ['previous_mode','mode_choice','ai_suspect','focus_person','solo_snapshot','last_scene_nonce','link_feedback','reveal_solution']:
+                for k in ['previous_mode','mode_choice','ai_suspect','focus_person','solo_snapshot','last_scene_nonce','link_feedback','reveal_solution','board_feedback']:
                     st.session_state.pop(k,None)
                 st.rerun()
     st.caption('الأماكن الحقيقية إلهام للأجواء بس. المخيم والمركب وكل الجرائم والشخصيات مؤلّفة. دي مش معلومات سفر أو تصريح زيارة.')
@@ -90,7 +91,7 @@ if phase == 'choose':
                 c,saved_state,saved_notes=import_dossier(upload.getvalue())
                 st.session_state.case=c;st.session_state.investigation=saved_state
                 st.session_state.detective_notes=saved_notes;st.session_state.entry_phase='game'
-                for k in ['mode_choice','previous_mode','ai_suspect','focus_person','solo_snapshot','last_scene_nonce','link_feedback','reveal_solution']:
+                for k in ['mode_choice','previous_mode','ai_suspect','focus_person','solo_snapshot','last_scene_nonce','link_feedback','reveal_solution','board_feedback']:
                     st.session_state.pop(k,None)
                 st.rerun()
             except (ValueError,TypeError) as e:st.warning(str(e))
@@ -373,6 +374,132 @@ if _cps and not state['finished'] and state['discovered'] and state['interviews'
                     st.info(_out['answer'])
                 else:
                     st.warning(_out)
+if wall.board_supported(case) and (not room_mode or room.get('mode','coop')=='coop') and (state['discovered'] or state['interviews']):
+    bstate = wall.board_state(state)
+    bcards = wall.board_cards(case, state)
+    by_id = {c['id']: c for c in bcards}
+    def _card_label(c):
+        if c['kind']=='evidence': return c['id']+' · '+c['title']
+        return c['title']+': «'+c['text'][:70]+('…' if len(c['text'])>70 else '')+'»'
+    def _board_apply(payload):
+        try:
+            if room_mode:
+                persist_room('board', payload)
+            else:
+                match = wall.board_action(case, state, payload)
+                if payload.get('do')=='link' and match and match['kind']=='deduction':
+                    try: link_evidence(case, state, list(match['cards']))
+                    except ValueError: pass
+            return True
+        except ValueError as e:
+            st.warning(str(e))
+            return False
+    st.subheader('🧩 ملف القضية: الحيطة والخط الزمني والاستجواب')
+    st.caption('كل ملف فحصته وكل رد سمعته بيبقى كارت واحد في التلات أدوات. ثبّت الكروت على الحيطة، اربط اللي شايف إن بينهم تناقض، ورتّبهم على وقت الليلة. اللعبة مش هتقولك «غلط»: نظرية ثبتت بتتحول لكارت مواجهة، ونظرية مفتوحة بتفضل نوتة من غير أي خسارة. في التعاون، الحيطة والخط مشتركين مع صحابك.')
+    if st.session_state.get('board_feedback'):
+        _kind, _text = st.session_state.pop('board_feedback')
+        (st.success if _kind=='ok' else st.info)(_text)
+    tab_wall, tab_line, tab_inter = st.tabs(['📌 الحيطة', '🕒 الخط الزمني', '🎭 الاستجواب'])
+    with tab_wall:
+        unpinned = [c for c in bcards if c['id'] not in bstate['pins']]
+        if unpinned and not state['finished']:
+            pick = st.selectbox('ثبّت كارت على الحيطة', [c['id'] for c in unpinned], index=None, placeholder='اختار كارت', format_func=lambda i: _card_label(by_id[i]), key='board_pick')
+            if st.button('ثبّت الكارت', key='board_pin', disabled=pick is None):
+                _board_apply({'do':'pin','card':pick}); st.rerun()
+        if not bstate['pins']:
+            st.caption('لسه مفيش كروت مثبتة. ثبّت أول كارت من فوق، وبعد كارتين تقدر تسجّل نظرية.')
+        for pid in bstate['pins']:
+            if pid not in by_id: continue
+            with st.container(border=True):
+                st.markdown('**'+_card_label(by_id[pid])+'**')
+                if not state['finished'] and st.button('شيل من الحيطة', key='unpin_'+pid):
+                    _board_apply({'do':'unpin','card':pid}); st.rerun()
+        if len(bstate['pins'])>=2 and not state['finished']:
+            with st.form('board_link'):
+                chosen = st.multiselect('اربط كروت شايف إن بينهم تناقض (٢ أو ٣)', bstate['pins'], format_func=lambda i: _card_label(by_id[i]), max_selections=3)
+                linked = st.form_submit_button('سجّل النظرية')
+            if linked:
+                if len(chosen)<2:
+                    st.warning('اختار كارتين على الأقل.')
+                else:
+                    match = next((t for t in wall.case_theories(case) if set(t['cards'])==set(chosen)), None)
+                    if _board_apply({'do':'link','cards':sorted(set(chosen))}):
+                        if match: st.session_state['board_feedback']=('ok', 'النظرية ثبتت: '+match['title']+'. '+match['text'])
+                        else: st.session_state['board_feedback']=('info', 'النظرية اتسجلت ملاحظة مفتوحة على الحيطة. اللعبة مش بتأكدها، ومفيش أي خسارة. كمّل دوران وجرّب ربط تاني.')
+                        st.rerun()
+        if bstate['theories']:
+            st.markdown('**النظريات على الحيطة**')
+        for i, t in enumerate(bstate['theories']):
+            th = wall.theory_lookup(case, t)
+            with st.container(border=True):
+                st.markdown(' + '.join(_card_label(by_id[c]) for c in t['cards'] if c in by_id))
+                if th: st.success('ثبتت: '+th['title']+'. '+th['text'])
+                else: st.caption('نظرية مفتوحة، لسه مش مثبتة. مش غلط ولا بتقفل حاجة.')
+                if not state['finished'] and st.button('امسح النظرية', key='unlink_'+str(i)):
+                    _board_apply({'do':'unlink','index':i}); st.rerun()
+    with tab_line:
+        st.caption('حرّك كروت الحيطة على وقت الليلة. الترتيب تفكيرك إنت، اللعبة مش بتحكم عليه. كل كارت واقف بوقته المكتوب عليه: لو رواية قفت جنب تسجيل مختلف، التعارض هيبان لك بنفسه.')
+        anchors = timeline_entries(case, state)
+        anchor_by_time = {}
+        for a in anchors: anchor_by_time.setdefault(a['sort'], []).append(a)
+        for slot in wall.TIMELINE_SLOTS[case['id']]:
+            rows = ['🔒 '+a['text'] for a in anchor_by_time.get(slot, [])]
+            for pid, s in bstate['placed'].items():
+                if s != slot or pid not in by_id: continue
+                badge = ''
+                times = wall.card_times(case, by_id[pid])
+                if times: badge = ' · ⏱ '+('، '.join(('بيقول ' if t['claim'] else '')+display_times(t['time']) for t in times))
+                rows.append('📌 '+_card_label(by_id[pid])+badge)
+            if rows:
+                with st.container(border=True):
+                    st.markdown('**'+display_times(slot)+'**')
+                    for row in rows: st.write(row)
+        if not anchors and not bstate['placed']:
+            st.caption('افحص أدلة فيها أوقات وثبّت كروت على الحيطة، والخط هيملى.')
+        if bstate['pins'] and not state['finished']:
+            _tl_card = st.selectbox('كارت من الحيطة', bstate['pins'], format_func=lambda i: _card_label(by_id[i]), key='tl_card')
+            _tl_slot = st.selectbox('خانة الوقت', ['مش على الخط']+wall.TIMELINE_SLOTS[case['id']], format_func=lambda s: s if s=='مش على الخط' else display_times(s), key='tl_slot')
+            if st.button('ثبّت المكان على الخط', key='tl_place'):
+                if _tl_slot=='مش على الخط': _board_apply({'do':'unplace','card':_tl_card})
+                else: _board_apply({'do':'place','card':_tl_card,'slot':_tl_slot})
+                st.rerun()
+    with tab_inter:
+        st.caption('نظرية ثبتت بتتحول لكارت مواجهة. العبه على صاحبه: لو الكلام فعلًا متناقض هيتكسر ويديك رد جديد. ومفيش رد مهم بيضيع باختيار غلط؛ اللي بيرد عليك بيكرر كلامه وخلاص.')
+        playable = False
+        for t in bstate['theories']:
+            th = wall.theory_lookup(case, t)
+            if not th or th['kind']!='confront': continue
+            playable = True
+            person = next(p for p in case['characters'] if p['id']==th['person'])
+            already = next((x for x in state['interviews'] if x['question_id']==th['unlocks']), None)
+            with st.container(border=True):
+                st.markdown('**'+th['title']+'** · مواجهة '+person['name'])
+                st.write(th['text'])
+                if already:
+                    st.success('اتكسر ورد: '+already['answer'])
+                elif not state['finished'] and st.button('العب كارت المواجهة', key='play_'+th['id'], type='primary'):
+                    _kind, _out = resolve_confront(case, state, th['person'], th['statement'], th['evidence'])
+                    if _kind=='unlock':
+                        try:
+                            persist_room('interview', {'suspect':th['person'],'topic':_out['id']})
+                            if not room_mode: record_answer(case, state, th['person'], _out['id'])
+                            st.session_state['board_feedback']=('ok', _out['answer'])
+                            st.rerun()
+                        except ValueError as e: st.warning(str(e))
+                    elif _kind=='done': st.info(_out['answer'])
+                    else: st.info(_out)
+        for i, t in enumerate(bstate['theories']):
+            if t.get('status')!='open': continue
+            st_cards = [c for c in t['cards'] if c in by_id and by_id[c]['kind']=='statement']
+            ev_cards = [c for c in t['cards'] if c in by_id and by_id[c]['kind']=='evidence']
+            if len(t['cards'])==2 and len(st_cards)==1 and len(ev_cards)==1 and not state['finished']:
+                person = next(p for p in case['characters'] if p['id']==by_id[st_cards[0]]['person'])
+                if st.button('جرّب النظرية المفتوحة قدام '+person['name']+' (من غير خسارة)', key='try_open_'+str(i)):
+                    _kind, _out = resolve_confront(case, state, person['id'], st_cards[0], ev_cards[0])
+                    st.info(_out if _kind!='done' else _out['answer'])
+        if not playable:
+            st.caption('لسه مفيش كروت مواجهة. اربط كلام حد سمعته بدليل فحصته على الحيطة؛ لو النظرية ثبتت هتلاقي الكارت هنا.')
+
 solo_unit = room_mode and room["unit_size"]==1
 if state["finished"]:
     result = state["result"]
@@ -496,6 +623,10 @@ if not state["finished"]:
             st.caption("اقتراحك لازم كل اللي في الأوضة يوافقوا عليه عشان التحقيق يقفل.")
         else:
             st.caption("قبل ما تثبّت الاتهام، راجع نفسك: مين عملها؟ وإيه اللي يثبت كلامك؟ اختار الأدلة اللي بتربط الخيوط ببعض. الشك لوحده مش كفاية. ليك قرار أخير واحد في المحاولة.")
+        _held = [wall.theory_lookup(case, t) for t in (state.get('board') or {}).get('theories', [])]
+        _held = [t for t in _held if t]
+        if wall.board_supported(case) and _held:
+            st.caption('نظرياتك اللي ثبتت على الحيطة: ' + ' · '.join(t['title'] for t in _held))
         cards = {e["id"]: e for e in evidence_cards(case)}
         with st.form("accusation"):
             selected = st.selectbox("مين اللي عملها؟", [s["name"] for s in case["characters"]], index=None, placeholder="اختار حد",key="final_suspect_"+scene_scope)
