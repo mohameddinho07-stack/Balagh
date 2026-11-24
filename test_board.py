@@ -208,7 +208,7 @@ class BoardUI(unittest.TestCase):
                                   'answer': 'الساعة 22:00 بالظبط. كلمته قبلها في موضوع شغل، وبعد كده ما شفتوش.'})
         a.run()
         self.assertFalse(a.exception)
-        self.assertTrue(any('الحيطة' in s.value for s in a.subheader))
+        self.assertTrue(any('ملف القضية' in s.value for s in a.subheader))
         for card in ['E06', 'n1']:
             a.selectbox(key='board_pick').set_value(card).run()
             a.button(key='board_pin').click().run()
@@ -224,11 +224,10 @@ class BoardUI(unittest.TestCase):
         a.button(key='play_cf_n1').click().run()
         self.assertFalse(a.exception)
         self.assertIn('n2', {x['question_id'] for x in a.session_state['investigation']['interviews']})
-        # Timeline placement.
-        a.selectbox(key='tl_card').set_value('n1')
-        a.selectbox(key='tl_slot').set_value('22:00')
-        a.button(key='tl_place').click().run()
-        self.assertEqual(a.session_state['investigation']['board']['placed'], {'n1': '22:00'})
+        # Timeline is automatic: no manual placement controls, pinned n1 appears itself.
+        self.assertEqual([x for x in a.selectbox if x.key in ('tl_card', 'tl_slot')], [])
+        self.assertEqual([x for x in a.button if x.key == 'tl_place'], [])
+        self.assertTrue(any('بيقول' in w.value for w in a.markdown if hasattr(w, 'value')) or any('بيقول' in str(w.value) for w in a.get('text')))
 
     def test_board_hidden_for_other_cases_and_race(self):
         from streamlit.testing.v1 import AppTest
@@ -243,7 +242,7 @@ class BoardUI(unittest.TestCase):
                 break
         a.session_state['investigation']['discovered'].extend(['E01', 'E02'])
         a.run()
-        self.assertFalse(any('الحيطة' in s.value for s in a.subheader))
+        self.assertFalse(any('ملف القضية' in s.value for s in a.subheader))
         # Race rooms keep the classic flow even on case 001.
         room = {'state': new_investigation(), 'code': 'R1', 'players': [{'name': 'أ', 'id': 1, 'unit': 'p1'}, {'name': 'ب', 'id': 2, 'unit': 'p2'}],
                 'me': 1, 'revision': 0, 'mode': 'race', 'notes': '', 'status': 'playing', 'proposal': None, 'approvals': [],
@@ -255,7 +254,7 @@ class BoardUI(unittest.TestCase):
         with patch('room_client.rpc', return_value=room):
             a.radio(key='mode_choice').set_value('🏁 سباق فردي').run()
             self.assertFalse(a.exception)
-            self.assertFalse(any('الحيطة' in s.value for s in a.subheader))
+            self.assertFalse(any('ملف القضية' in s.value for s in a.subheader))
 
     def test_coop_wall_actions_go_through_the_room(self):
         from streamlit.testing.v1 import AppTest
@@ -282,7 +281,7 @@ class BoardUI(unittest.TestCase):
             a.session_state['room_token'] = 'x'
             a.run()
             self.assertFalse(a.exception)
-            self.assertTrue(any('الحيطة' in s.value for s in a.subheader))
+            self.assertTrue(any('ملف القضية' in s.value for s in a.subheader))
             a.selectbox(key='board_pick').set_value('E06').run()
             a.button(key='board_pin').click().run()
             self.assertFalse(a.exception)
