@@ -132,6 +132,7 @@ vol.oninput=()=>{if(master)master.gain.setTargetAtTime(masterLevel(),ctx.current
 document.addEventListener('pointerdown',e=>{if(!e.target.closest('#sound')&&!userMuted&&(!audioOn||ctx?.state!=='running'))startAudio()},{capture:true});
 document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&!userMuted&&(!audioOn||ctx?.state!=='running'))startAudio()},{capture:true});
 document.addEventListener('visibilitychange',()=>{if(ctx&&audioOn){if(document.hidden){ctx.suspend();clearInterval(timer)}else if(!userMuted){ctx.resume();clearInterval(timer);tick();timer=setInterval(tick,1200)}}});
+window.__audioState=()=>JSON.stringify({cur,phase,scene,state:ctx&&ctx.state,audioOn,userMuted,built:Object.keys(built),master:master&&+master.gain.value.toFixed(3),gains:Object.fromEntries(Object.entries(built).map(([k,v])=>[k,+v.g.gain.value.toFixed(2)])),label:snd.textContent,timers:!!timer});
 // Offline render for level checks only: window.__renderScene(name, seconds) -> Float32Array of the scene at default volume.
 window.__renderScene=async(name,secs)=>{const c=new OfflineAudioContext(1,44100*secs,44100),m=c.createGain();m.gain.value=.6*.8;m.connect(c.destination);const g=c.createGain();g.connect(m);const s=BUILD[name](c,noiseBuf(c),g);s(0,secs);const r=await c.startRendering();return Array.from(r.getChannelData(0))};
 function send(type,extra={}){window.parent.postMessage({isStreamlitMessage:true,type,...extra},'*')}
