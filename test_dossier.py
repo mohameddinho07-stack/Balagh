@@ -31,7 +31,7 @@ class DossierTests(unittest.TestCase):
   for patch in [{'case_id':[]},{'discovered':['E07']},{'discovered':['XXX']},{'questions':['s207']},{'deductions':['c201']},{'hints_used':True},{'hints_used':-1},{'notes':123},{'finished':'yes'},{'finished':True,'verdict':{'evidence':[[]],'suspect':[]}}]:
    with self.subTest(patch=patch):
     with self.assertRaises(ValueError):import_dossier(json.dumps(dict(base,**patch)))
-  for raw in ['{}','[1]','null','bad',b'\xff', 'x'*100001]:
+  for raw in ['{}','[1]','null','bad',b'\xff', 'x'*100001, '['*2000+']'*2000, None]:
    with self.assertRaises(ValueError):import_dossier(raw)
  def test_links_cannot_unlock_or_duplicate(self):
   c=generate_case('002');s=new_investigation()
