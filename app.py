@@ -459,11 +459,17 @@ if wall.board_supported(case) and (not room_mode or room.get('mode','coop')=='co
             times = wall.card_times(case, by_id[pid])
             if not times: no_time.append(pid); continue
             for t in times:
-                by_slot.setdefault(t['time'], []).append((pid, t))
+                _m = int(t['time'][:2])*60+int(t['time'][3:5]); _m += 1440 if _m < 720 else 0
+                _slots = wall.TIMELINE_SLOTS[case['id']]
+                _key = _slots[0]
+                for _s in _slots:
+                    _sm = int(_s[:2])*60+int(_s[3:5]); _sm += 1440 if _sm < 720 else 0
+                    if _sm <= _m: _key = _s
+                by_slot.setdefault(_key, []).append((pid, t))
         for slot in wall.TIMELINE_SLOTS[case['id']]:
             rows = ['🔒 '+a['text'] for a in anchor_by_time.get(slot, [])]
             for pid, t in by_slot.get(slot, []):
-                rows.append('📌 '+_card_label(by_id[pid])+(' · بيقول إن ده كان '+display_times(t['time']) if t['claim'] else ''))
+                rows.append('📌 '+_card_label(by_id[pid])+(' · بيقول إن ده كان '+display_times(t['time']) if t['claim'] else ' · الوقت المسجّل '+display_times(t['time'])))
             if rows:
                 with st.container(border=True):
                     st.markdown('**'+display_times(slot)+'**')
