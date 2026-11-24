@@ -12,9 +12,10 @@ def export_dossier(case,state,notes=''):
        'verdict':({'suspect':state['result']['suspect'],'evidence':state['result']['submitted_evidence']} if state['finished'] else None)},ensure_ascii=False,indent=2)
 
 def import_dossier(raw):
+    if not isinstance(raw,(str,bytes,bytearray)):raise ValueError('ملف الحفظ مش سليم.')
     if len(raw)>MAX_BYTES:raise ValueError('ملف الحفظ أكبر من المسموح.')
     try:d=json.loads(raw)
-    except (ValueError,TypeError):raise ValueError('ملف الحفظ مش JSON سليم.') from None
+    except (ValueError,TypeError,RecursionError):raise ValueError('ملف الحفظ مش JSON سليم.') from None
     if not isinstance(d,dict) or d.get('format')!='balagh-solo-v1':raise ValueError('ده مش ملف حفظ بلاغ مدعوم.')
     try:case=generate_case(d.get('case_id'))
     except (KeyError,TypeError):raise ValueError('القضية دي مش موجودة في النسخة الحالية.') from None
