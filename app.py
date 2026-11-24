@@ -409,15 +409,22 @@ if wall.board_supported(case) and (not room_mode or room.get('mode','coop')=='co
     if st.session_state.get('board_feedback'):
         _kind, _text = st.session_state.pop('board_feedback')
         (st.success if _kind=='ok' else st.info)(_text)
+    _holds = [t for t in bstate['theories'] if t.get('status')=='holds' and (wall.theory_lookup(case, t) or {}).get('kind')=='confront' and not next((x for x in state['interviews'] if x['question_id']==wall.theory_lookup(case, t)['unlocks']), None)]
+    if state['finished']: _hint = None
+    elif _holds: _hint = 'عندك كارت مواجهة جاهز. افتح تبويب المواجهة.'
+    elif len(bstate['pins'])>=2: _hint = 'ربطت اتنين بيتناقضوا؟ اختارهم وسجّل النظرية في الحيطة.'
+    elif bcards: _hint = 'ثبّت الكروت اللي شايفها مهمة في الحيطة.'
+    else: _hint = 'افحص أول دليل واسمع ردود، وبعدها تلاقي كروتك هنا.'
+    if _hint: st.info('الخطوة الجاية: '+_hint)
     tab_wall, tab_line, tab_inter = st.tabs(['📌 الحيطة', '🕒 الخط الزمني', '🎭 المواجهة'])
     with tab_wall:
         unpinned = [c for c in bcards if c['id'] not in bstate['pins']]
         if unpinned and not state['finished']:
-            pick = st.selectbox('ثبّت كارت على الحيطة', [c['id'] for c in unpinned], index=None, placeholder='اختار كارت', format_func=lambda i: _card_label(by_id[i]), key='board_pick')
-            if st.button('ثبّت الكارت', key='board_pin', disabled=pick is None):
-                _board_apply({'do':'pin','card':pick}); st.rerun()
+            for c in unpinned:
+                if st.button('📌 ثبّت: '+_card_label(c), key='pin_'+c['id']):
+                    _board_apply({'do':'pin','card':c['id']}); st.rerun()
         if not bstate['pins']:
-            st.caption('لسه مفيش كروت مثبتة. ثبّت أول كارت من فوق، وبعد كارتين تقدر تسجّل نظرية.')
+            st.caption('لسه مفيش كروت مثبتة. دوس على أي كارت من فوق عشان تثبّته.' if unpinned else 'افحص أدلة أو اسمع ردود، وكل واحد هيبقى كارت هنا.')
         for pid in bstate['pins']:
             if pid not in by_id: continue
             with st.container(border=True):
@@ -459,17 +466,13 @@ if wall.board_supported(case) and (not room_mode or room.get('mode','coop')=='co
             times = wall.card_times(case, by_id[pid])
             if not times: no_time.append(pid); continue
             for t in times:
-                _m = int(t['time'][:2])*60+int(t['time'][3:5]); _m += 1440 if _m < 720 else 0
-                _slots = wall.TIMELINE_SLOTS[case['id']]
-                _key = _slots[0]
-                for _s in _slots:
-                    _sm = int(_s[:2])*60+int(_s[3:5]); _sm += 1440 if _sm < 720 else 0
-                    if _sm <= _m: _key = _s
-                by_slot.setdefault(_key, []).append((pid, t))
-        for slot in wall.TIMELINE_SLOTS[case['id']]:
+                by_slot.setdefault(t['time'], []).append((pid, t))
+        def _night_min(x):
+            m = int(x[:2])*60+int(x[3:5]); return m+1440 if m < 720 else m
+        for slot in sorted(set(anchor_by_time)|set(by_slot), key=_night_min):
             rows = ['🔒 '+a['text'] for a in anchor_by_time.get(slot, [])]
             for pid, t in by_slot.get(slot, []):
-                rows.append('📌 '+_card_label(by_id[pid])+(' · بيقول إن ده كان '+display_times(t['time']) if t['claim'] else ' · الوقت المسجّل '+display_times(t['time'])))
+                rows.append('📌 '+_card_label(by_id[pid])+(' · ده كلامه، مش دليل' if t['claim'] else ''))
             if rows:
                 with st.container(border=True):
                     st.markdown('**'+display_times(slot)+'**')
