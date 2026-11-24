@@ -210,8 +210,7 @@ class BoardUI(unittest.TestCase):
         self.assertFalse(a.exception)
         self.assertTrue(any('ملف القضية' in s.value for s in a.subheader))
         for card in ['E06', 'n1']:
-            a.selectbox(key='board_pick').set_value(card).run()
-            a.button(key='board_pin').click().run()
+            a.button(key='pin_'+card).click().run()
             self.assertFalse(a.exception)
         self.assertEqual(a.session_state['investigation']['board']['pins'], ['E06', 'n1'])
         ms = next(m for m in a.multiselect if 'تناقض' in m.label)
@@ -227,7 +226,7 @@ class BoardUI(unittest.TestCase):
         # Timeline is automatic: no manual placement controls, pinned n1 appears itself.
         self.assertEqual([x for x in a.selectbox if x.key in ('tl_card', 'tl_slot')], [])
         self.assertEqual([x for x in a.button if x.key == 'tl_place'], [])
-        self.assertTrue(any('بيقول' in w.value for w in a.markdown if hasattr(w, 'value')) or any('بيقول' in str(w.value) for w in a.get('text')))
+        self.assertTrue(any('ده كلامه، مش دليل' in w.value for w in a.markdown if hasattr(w, 'value')) or any('ده كلامه، مش دليل' in str(w.value) for w in a.get('text')))
 
     def test_board_hidden_for_other_cases_and_race(self):
         from streamlit.testing.v1 import AppTest
@@ -282,8 +281,7 @@ class BoardUI(unittest.TestCase):
             a.run()
             self.assertFalse(a.exception)
             self.assertTrue(any('ملف القضية' in s.value for s in a.subheader))
-            a.selectbox(key='board_pick').set_value('E06').run()
-            a.button(key='board_pin').click().run()
+            a.button(key='pin_E06').click().run()
             self.assertFalse(a.exception)
         self.assertIn('board', calls)
         self.assertEqual(room['state']['board']['pins'], ['E06'])
