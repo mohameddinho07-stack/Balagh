@@ -10,7 +10,7 @@ class StorageSQL(unittest.TestCase):
    srv=pgserver.get_server(d);conn=psycopg2.connect(srv.get_uri());conn.autocommit=True
    try:
     cur=conn.cursor();cur.execute('create role anon;create role authenticated;');cur.execute(SHIM)
-    cur.execute(open('night_store.sql').read());cur.execute(open('night_store.sql').read())
+    cur.execute(open('night_persistence.sql').read());cur.execute(open('night_persistence.sql').read())
     def rpc(b):
      cur.execute('select public.balagh_night_store(%s,%s,%s,%s,%s)',(b['op'],b['code'],b['capability'],b.get('expected',0),b.get('snapshot','')))
      return cur.fetchone()[0]
