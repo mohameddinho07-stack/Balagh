@@ -16,7 +16,7 @@ def started():
 class AppFlowTests(unittest.TestCase):
     def test_playable_flows(self):
         a=started()
-        a.session_state['investigation']['discovered'].append('E03');a.run()
+        a.session_state['investigation']['discovered'].extend(['E01','E02','E03']);a.run()
         next(x for x in a.selectbox if x.label=='مين اللي عملها؟').select('يوسف بيومي')
         a.multiselect[0].select('E03')
         a.checkbox[0].check()
@@ -49,6 +49,7 @@ class AppFlowTests(unittest.TestCase):
 
     def test_no_duplicate_legacy_presentations(self):
         a=started()
+        a.session_state['investigation']['discovered']=['E01','E02','E03'];a.run()
         assert not any('نسخة نصية' in x.value or 'نسمع أقوالهم' in x.value for x in a.subheader)
         assert not any(x.key.startswith('inspect_') for x in a.button if x.key)
         assert any('اسأل بطريقتك' in x.value for x in a.subheader)
@@ -103,11 +104,12 @@ class AppFlowTests(unittest.TestCase):
             self.assertFalse(a.exception)
 
     def test_new_attempt_has_no_stale_final_confirmation(self):
-        a=started();a.session_state['investigation']['discovered']=['E03'];a.run()
+        a=started();a.session_state['investigation']['discovered']=['E01','E02','E03'];a.run()
         next(x for x in a.selectbox if x.label=='مين اللي عملها؟').select('يوسف بيومي')
         a.multiselect[0].select('E03');a.checkbox[0].check()
         a.button(key='FormSubmitter:accusation-ثبّت الاتهام').click().run()
         next(b for b in a.button if b.label=='نجرّب من الأول').click().run()
+        a.session_state['investigation']['discovered']=['E01','E02','E03'];a.run()
         self.assertIsNone(next(x for x in a.selectbox if x.label=='مين اللي عملها؟').value)
         self.assertFalse(next(x for x in a.checkbox if x.label.startswith('أيوه، ده')).value)
         self.assertEqual(a.multiselect[0].value,[])
@@ -119,6 +121,7 @@ class AppFlowTests(unittest.TestCase):
         a.secrets['GROQ_API_KEY'] = 'test'
         a.session_state['entry_phase'] = 'game'
         a.run(); next(x for x in a.button if x.label=='🚔 يلا نحقق').click().run(); skip_intro(a)
+        a.session_state['investigation']['discovered']=['E01'];a.run()
         selector = a.selectbox(key='ai_suspect')
         assert selector.value is None
         assert selector.options == ['آسر منصور','ليلى الديب','يوسف بيومي','نادين مراد']
