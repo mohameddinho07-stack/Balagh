@@ -261,13 +261,9 @@ state = st.session_state.investigation
 public = case["public"]
 st.subheader(f"بلاغ {case['id']} • {public['title']}")
 st.caption(f"المكان: {public['location']} | اللي اتقتل: {public['victim']}")
-with st.expander("اقرا البلاغ وحكاية اللي حصل"):
-    st.info(public["story"])
 import importlib, pilot; importlib.reload(pilot)  # picks up data edits without a manual reboot
 from pilot import next_step, confront_only, intro_beats, mood as case_mood, confront_people, heard_statements, resolve_confront
 _mood = case_mood(case['id'])
-if _mood:
-    st.markdown('<div style="border-right:4px solid '+_mood['color']+';padding:.3rem .9rem;margin:.2rem 0 .6rem;opacity:.92">'+_mood['line']+'</div>', unsafe_allow_html=True)
 _beats = intro_beats(case['id'])
 _ikey = 'intro:'+case['id']+':'+str(room.get('code','') if room_mode else 'solo')
 if _beats and not state['discovered'] and not state['interviews'] and not state['finished'] and not st.session_state.get(_ikey+':done'):
@@ -306,6 +302,10 @@ scene_event = crime_scene(cards=available_evidence(case,state), locked_cards=[{'
         'questions':[{'id':q['id'],'question':q['question']} for q in available_questions(c,state['discovered']) if q['id'] not in confront_only(case['id'])],
         'locked':len([q for q in c['interviews'] if q['id'] not in confront_only(case['id'])])-len([q for q in available_questions(c,state['discovered']) if q['id'] not in confront_only(case['id'])]),
         'answers':[a for a in state['interviews'] if a['suspect']==c['name']]} for c in case['characters']], key='crime_scene_'+scene_scope, default=None)
+with st.expander("اقرا البلاغ وحكاية اللي حصل"):
+    st.info(public["story"])
+if _mood:
+    st.markdown('<div style="border-right:4px solid '+_mood['color']+';padding:.3rem .9rem;margin:.2rem 0 .6rem;opacity:.92">'+_mood['line']+'</div>', unsafe_allow_html=True)
 if isinstance(scene_event, dict) and scene_event.get('nonce') != st.session_state.get('last_scene_nonce'):
     st.session_state.last_scene_nonce = scene_event.get('nonce')
     eid = scene_event.get('evidence')
