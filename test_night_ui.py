@@ -2,7 +2,7 @@
 import unittest
 from unittest.mock import patch
 from night_store import DurableStore
-from test_night_store import MemoryRPC
+from test_night_storage import MemoryRPC
 from streamlit.testing.v1 import AppTest
 
 ROLE_K = 'قاتل'
