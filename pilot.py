@@ -36,6 +36,7 @@ CONFRONT = {
   dict(person='bassem', statement='s204', evidence='E05', unlocks='s205'),
   dict(person='bassem', statement='s205', evidence='E06', unlocks='s206'),
   dict(person='bassem', statement='s206', evidence='E08', unlocks='s207'),
+  dict(person='bassem', statement='s207', evidence='E10', unlocks='s214'),
  ],
 }
 WRONG = 'ده مش بيقول لي حاجة. جرّب دليل تاني على نفس الكلام.'
