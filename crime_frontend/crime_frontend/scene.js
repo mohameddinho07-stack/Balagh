@@ -25,6 +25,26 @@ function boot(){
  function textLabel(text,x,y,z,width=1){const c=document.createElement('canvas');c.width=256;c.height=96;const ctx=c.getContext('2d');ctx.fillStyle='#e5d7b8';ctx.fillRect(0,0,256,96);ctx.fillStyle='#233f35';ctx.font='bold 42px sans-serif';ctx.textAlign='center';ctx.fillText(text,128,64);const o=mesh(new THREE.PlaneGeometry(width,width*.375),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(c),side:THREE.DoubleSide}),x,y,z);return o}
  function packet(id,x,y,z){tag(box(.72,.07,.52,paper,x,y,z),id);let t=tag(textLabel(id,x,y+.04,z,.65),id);t.rotation.x=-Math.PI/2}
  function lamp(x,y,z){cyl(.18,.22,.08,brass,x,y,z);cyl(.04,.04,.7,brass,x,y+.4,z);cyl(.24,.28,.35,mat(0xdfb55b,.6),x,y+.65,z);const p=new THREE.PointLight(0xffb34f,18,7,2);p.position.set(x,y+.8,z);scene.add(p)}
+
+ // Non-graphic crime scene: sheet-covered victim, chalk outline, numbered markers and tape. Position is never evidence.
+ function crimeScene(cx,fy,cz,rot){
+  const g=new THREE.Group();g.position.set(cx,fy,cz);g.rotation.y=rot;scene.add(g);
+  const add=(o)=>{o.castShadow=true;o.receiveShadow=true;g.add(o);return o};
+  const c=document.createElement('canvas');c.width=256;c.height=384;const x=c.getContext('2d');x.clearRect(0,0,256,384);x.strokeStyle='#f4f1e6';x.lineWidth=7;x.lineJoin='round';
+  x.beginPath();x.arc(128,52,32,0,7);x.stroke();x.beginPath();x.moveTo(98,92);x.lineTo(60,120);x.lineTo(30,230);x.moveTo(158,92);x.lineTo(196,120);x.lineTo(226,200);x.moveTo(98,92);x.lineTo(158,92);x.lineTo(150,210);x.lineTo(168,350);x.moveTo(106,210);x.lineTo(88,350);x.moveTo(106,210);x.lineTo(150,210);x.stroke();
+  const outline=new THREE.Mesh(new THREE.PlaneGeometry(1.9,2.85),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(c),transparent:true,depthWrite:false}));outline.rotation.x=-Math.PI/2;outline.position.y=.012;g.add(outline);
+  const sheet=new THREE.MeshStandardMaterial({color:0xe9e4d3,roughness:.95});
+  const torso=add(new THREE.Mesh(new THREE.CapsuleGeometry(.22,.62,6,14),sheet));torso.rotation.x=Math.PI/2;torso.scale.set(1.15,1,.55);torso.position.set(0,.13,-.1);
+  const head=add(new THREE.Mesh(new THREE.SphereGeometry(.16,14,10),sheet));head.position.set(0,.1,-.78);head.scale.set(1,.8,1);
+  for(const sx of [-.12,.12]){const leg=add(new THREE.Mesh(new THREE.CapsuleGeometry(.09,.55,4,10),sheet));leg.rotation.x=Math.PI/2;leg.scale.set(1,1,.6);leg.position.set(sx,.07,.78)}
+  for(const sx of [-.34,.34]){const arm=add(new THREE.Mesh(new THREE.CapsuleGeometry(.07,.5,4,10),sheet));arm.rotation.x=Math.PI/2;arm.rotation.z=sx>0?-.25:.25;arm.scale.set(1,1,.6);arm.position.set(sx*1.05,.07,-.15)}
+  const yellow=new THREE.MeshStandardMaterial({color:0xf2c230,roughness:.6});
+  [[-1.1,-.4,'1'],[1.15,.5,'2'],[.9,-1.0,'3']].forEach(([mx,mz,n])=>{const t=add(new THREE.Mesh(new THREE.ConeGeometry(.12,.3,4),yellow));t.position.set(mx,.15,mz);const lc=document.createElement('canvas');lc.width=64;lc.height=64;const lx=lc.getContext('2d');lx.fillStyle='#f2c230';lx.fillRect(0,0,64,64);lx.fillStyle='#1d1d18';lx.font='bold 44px sans-serif';lx.textAlign='center';lx.fillText(n,32,48);const l=new THREE.Mesh(new THREE.PlaneGeometry(.22,.22),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(lc)}));l.position.set(mx,.34,mz);l.rotation.x=-.5;g.add(l)});
+  const tapeM=new THREE.MeshBasicMaterial({color:0xf2c230});const post=new THREE.MeshStandardMaterial({color:0x2a2a25});
+  const P=[[-1.6,-1.7],[1.6,-1.7],[1.6,1.7],[-1.6,1.7]];
+  P.forEach(([px,pz])=>{const p=add(new THREE.Mesh(new THREE.CylinderGeometry(.035,.035,.8,8),post));p.position.set(px,.4,pz)});
+  for(let i=0;i<4;i++){const a=P[i],b=P[(i+1)%4];const len=Math.hypot(b[0]-a[0],b[1]-a[1]);const t=new THREE.Mesh(new THREE.BoxGeometry(len,.07,.008),tapeM);t.position.set((a[0]+b[0])/2,.68,(a[1]+b[1])/2);t.rotation.y=-Math.atan2(b[1]-a[1],b[0]-a[0]);g.add(t)}
+ }
  scene.add(new THREE.HemisphereLight(kind==='hankorab'?0x91bce8:0xc3d2d4,0x373327,1.7));
  const key=new THREE.DirectionalLight(0xc3dbf0,2);key.position.set(5,10,4);key.castShadow=true;key.shadow.mapSize.set(1024,1024);key.shadow.camera.left=-12;key.shadow.camera.right=12;key.shadow.camera.top=12;key.shadow.camera.bottom=-12;scene.add(key);
  const animated=[];
@@ -75,6 +95,7 @@ function boot(){
   for(let x of [-3.6,3.6]){let ring=mesh(new THREE.TorusGeometry(.45,.12,8,24),mat(0xcb7145),x,1,1);ring.rotation.y=Math.PI/2}
   for(let i=0;i<7;i++){let bank=mesh(new THREE.SphereGeometry(6,8,4),mat(0x625946),-30+i*11,-1,-31-Math.sin(i)*4);bank.scale.y=.5}
  }
+ if(kind==='hotel')crimeScene(2.7,.03,.9,.35);else if(kind==='hankorab')crimeScene(1.8,-.04,-.9,.5);else crimeScene(3.1,.08,-.8,.2);
  const glow=new THREE.Mesh(new THREE.RingGeometry(.38,.44,32),new THREE.MeshBasicMaterial({color:0xf4d38e,side:THREE.DoubleSide}));glow.rotation.x=-Math.PI/2;glow.visible=false;scene.add(glow);
  window.addEventListener('objectchosen',e=>{const o=objects.find(o=>o.userData.file===e.detail);if(o){glow.position.set(o.position.x,o.position.y+.35,o.position.z);glow.visible=true}});
  const cv=renderer.domElement;cv.setAttribute('aria-label','مشهد مكان القضية. كل الأدلة متاحة كمان بأزرار الملفات.');
