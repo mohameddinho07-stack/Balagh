@@ -180,7 +180,8 @@ class PilotTests(unittest.TestCase):
     def test_confrontation_targets_are_not_plain_menu_items(self):
         import pilot
         self.assertEqual(pilot.confront_only('002'),{'s205','s206','s207','s214'})
-        self.assertEqual(pilot.confront_only('001'),set())
+        self.assertEqual(pilot.confront_only('001'),{'n2','n3','n4','n5'})
+        self.assertEqual(pilot.confront_only('003'),{'b305','b306','b307','b314'})
 
 
 class NextStepTests(unittest.TestCase):
