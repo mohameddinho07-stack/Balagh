@@ -5,67 +5,43 @@ widgets for its own player, built from Game.view(token). Nothing here reads
 another player's role, cards or the night truth.
 """
 import secrets
-import threading
 import time
 
 import streamlit as st
-
 from night import Game, GameError, PLACES, ROLE_KILLER
-
-_MAX_ROOMS = 40
-_TTL = 6 * 3600
+from night_store import DurableStore
 
 
-@st.cache_resource
 def _store():
-    return dict(rooms={}, lock=threading.Lock())
+    try:
+        return DurableStore(st.secrets['SUPABASE_URL'], st.secrets['SUPABASE_KEY'], st.secrets['NIGHT_MASTER_SECRET'])
+    except (KeyError, FileNotFoundError):
+        raise GameError('حفظ الليلة لسه بيتجهز. جرّب بعدين.') from None
 
 
 def _new_room(name):
-    s = _store()
-    with s['lock']:
-        now = time.time()
-        for code in [c for c, r in s['rooms'].items() if now - r['at'] > _TTL]:
-            s['rooms'].pop(code, None)
-        if len(s['rooms']) >= _MAX_ROOMS:
-            raise GameError('الأوضات كتير دلوقتي. جرّب كمان شوية.')
-        code = secrets.token_hex(3).upper()
-        game = Game(clock=time.time)
-        token = game.join(name)
-        s['rooms'][code] = dict(game=game, at=now, lock=threading.Lock())
+    game = Game(clock=time.time)
+    token = game.join(name)
+    code = secrets.token_hex(5).upper()
+    _store().save(code, game, 0, create=True)
     return code, token
 
 
 def _join(code, name):
-    s = _store()
     code = (code or '').strip().upper()
-    room = s['rooms'].get(code)
-    if not room:
-        raise GameError('الكود ده مش موجود')
-    with room['lock']:
-        token = room['game'].join(name)
+    store = _store()
+    game, revision = store.load(code)
+    token = game.join(name)
+    store.save(code, game, revision)
     return code, token
 
 
 def _act(op, payload=None):
-    room = _store()['rooms'].get(st.session_state.get('night_code'))
-    if not room:
-        raise GameError('الأوضة خلصت أو اتقفلت')
-    with room['lock']:
-        room['at'] = time.time()
-        game, token = room['game'], st.session_state['night_token']
-        if op == 'start':
-            game.start(token)
-            return game.view(token)
-        return game.act(token, op, payload)
+    return _store().act(st.session_state['night_code'], st.session_state['night_token'], op, payload)
 
 
 def _view():
-    room = _store()['rooms'].get(st.session_state.get('night_code'))
-    if not room:
-        return None
-    with room['lock']:
-        return room['game'].view(st.session_state['night_token'])
+    return _store().read(st.session_state['night_code'], st.session_state['night_token'])
 
 
 def _try(op, payload=None):
@@ -92,8 +68,15 @@ def _entry():
         c1, c2 = st.columns(2)
         create = c1.form_submit_button('اعمل أوضة', type='primary')
         join = c2.form_submit_button('ادخل الأوضة')
+        restore = st.form_submit_button('ارجع لليلتي')
+        return_key = st.text_input('مفتاح رجوعك الشخصي', type='password', key='night_returnin')
     try:
-        if create:
+        if restore:
+            code = code.strip().upper()
+            _store().read(code, return_key)
+            st.session_state['night_code'], st.session_state['night_token'] = code, return_key
+            st.rerun()
+        elif create:
             st.session_state['night_code'], st.session_state['night_token'] = _new_room(name)
             st.rerun()
         elif join:
@@ -105,7 +88,11 @@ def _entry():
 
 @st.fragment(run_every=4)
 def _room():
-    v = _view()
+    try:
+        v = _view()
+    except GameError as e:
+        st.warning(str(e))
+        return
     if v is None:
         st.warning('الأوضة خلصت أو اتقفلت.')
         if st.button('رجوع', key='night_back'):
@@ -116,6 +103,9 @@ def _room():
     st.caption('كود الأوضة: ' + st.session_state['night_code'] + ' | إنت: ' + v['me'])
     if st.session_state.get('night_msg'):
         st.warning(st.session_state.pop('night_msg'))
+    with st.expander('احفظ مفتاح رجوعك قبل ما تقفل'):
+        st.caption('المفتاح شخصي وسري، اللي معاه المفتاح والكود يشوف دورك. احفظهم بعيد عن الجروب. الحفظ بيستمر لو التطبيق نام أو اتفتح من جديد.')
+        st.code(st.session_state['night_token'], language=None)
     ph = v['phase']
     if ph == 'lobby':
         st.subheader('الصحاب اللي دخلوا (' + str(len(v['players'])) + '/7)')
