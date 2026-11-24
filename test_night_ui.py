@@ -23,15 +23,15 @@ def fresh():
 class NightUI(unittest.TestCase):
     def test_roles_private_per_session(self):
         host = fresh()
-        host.text_input(key='night_name').set_value('محمد').run()
-        host.button(key='night_create').click().run()
+        host.text_input(key='night_name').set_value('محمد')
+        [b for b in host.button if b.label=='اعمل أوضة'][0].click().run()
         code = host.session_state['night_code']
         others = []
         for n in ['سارة', 'أحمد', 'كريم']:
             a = fresh()
-            a.text_input(key='night_name').set_value(n).run()
-            a.text_input(key='night_codein').set_value(code).run()
-            a.button(key='night_joinbtn').click().run()
+            a.text_input(key='night_name').set_value(n)
+            a.text_input(key='night_codein').set_value(code)
+            [b for b in a.button if b.label=='ادخل الأوضة'][0].click().run()
             others.append(a)
         host.run()
         host.button(key='night_start').click().run()
