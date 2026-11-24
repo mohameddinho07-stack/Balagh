@@ -208,4 +208,4 @@ WORDMARK_WEBP_B64 = (
 
 
 def wordmark_html(width=240):
-    return ("<div style=\"text-align:center;margin:0 0 .5rem\"><img alt=\"بلاغ\" src=\"data:image/webp;base64,"+WORDMARK_WEBP_B64+"\" style=\"width:min("+str(width)+"px,70%);height:auto;max-height:260px;object-fit:contain\"></div>")
+    return ("<div style=\"text-align:center;margin:0 0 .5rem\"><img alt=\"بلاغ\" src=\"data:image/webp;base64,"+WORDMARK_WEBP_B64+"\" style=\"width:min("+str(width)+"px,70%);height:auto;max-height:260px;object-fit:contain;mix-blend-mode:lighten\"></div>")
