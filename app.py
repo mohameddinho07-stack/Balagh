@@ -120,6 +120,8 @@ def team_label(unit):
 _want = st.session_state.pop('_want_mode', None)
 if _want in MODES and not st.session_state.get('room_token'):
     st.session_state['mode_choice'] = _want
+if st.session_state.get('mode_choice') in (None, MODES[0]) and not st.session_state.get('room_token'):
+    st.markdown('<span class="modeexp-mark"></span><style>@media(max-width:650px){[data-testid=stElementContainer]:has(.modeexp-mark)+[data-testid=stElementContainer]{display:none}[data-testid=stElementContainer]:has(.modeexp-mark){display:none}[data-testid=stBaseButton-secondary]{min-height:36px!important;padding:.1rem .6rem!important}}</style>', unsafe_allow_html=True)
 with st.expander("طريقة اللعب: فردي، تعاون، سباق، أو فرق", expanded=bool(st.session_state.get('mode_choice') not in (None, MODES[0]))):
     st.caption('كل القضايا بتشتغل بنفس الأوضاع، حتى اللي هتتضاف بعدين. تعاون: الكل في تحقيق واحد. سباق فردي: كل واحد لوحده. سباق فرق: فريقين لـ ٤ فرق، كل فريق من ١ لـ ٥ لاعبين (٢ ضد ٢، ٤ ضد ٤، وغيره)، التقدم مشترك جوه الفريق ومنفصل بين الفرق.')
     mode = st.radio("تحب تلعب إزاي؟", MODES, horizontal=True, key='mode_choice', disabled=bool(st.session_state.get('room_token')))
