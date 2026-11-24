@@ -54,7 +54,7 @@ class ModesUI(unittest.TestCase):
         r = room(started=True, proposal={'suspect': 'باسم', 'evidence': ['E06']}, approvals=[2])
         r['state']['discovered'] = ['E06']
         with patch('room_client.rpc', return_value=r):
-            a.session_state['room_token'] = 'x'; a.run()
+            a.session_state['room_token'] = 'x'; a.session_state['stage'] = 'accuse'; a.run()
             self.assertFalse(a.exception)
             self.assertTrue(any('موافقات' in c.value for c in a.caption))
 
