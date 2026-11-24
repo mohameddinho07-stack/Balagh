@@ -45,8 +45,12 @@ def archive_solo():
 if phase == 'choose':
     from brand import wordmark_html
     st.markdown(wordmark_html(), unsafe_allow_html=True)
-    st.title('اختار البلاغ')
-    st.caption('٣ حكايات من خيالنا. كل واحدة مكان، وناس، وحقيقة مختلفة. اختار، وافتح عينك.')
+    st.markdown('<div style="border:1px solid #6c8067;border-radius:10px;padding:14px 16px;margin:6px 0 14px;background:#1a2d26;text-align:right"><div style="color:#d9b45f;font-size:0.8rem;letter-spacing:1px">مكتب البلاغات · الدور التالت</div><div style="font-size:1.5rem;font-weight:700;color:#eee5cf;margin:4px 0">نوّرت مكتبك يا باشا</div><div style="color:#c9d2c0">فيه ٣ بلاغات على المكتب مستنيين حد يفتحهم. اختار طريقة الشغل، وبعدين خد ملف واحد.</div></div>', unsafe_allow_html=True)
+    _MODE_LIST = ["🔍 العب لوحدك", "🤝 تعاون", "🏁 سباق فردي", "⚔️ سباق فرق"]
+    st.markdown('**١) تحب تشتغل إزاي؟**')
+    _pick = st.radio('طريقة اللعب', _MODE_LIST, key='chooser_mode', label_visibility='collapsed')
+    st.caption({_MODE_LIST[0]:'إنت لوحدك قدام الملف. بيتحفظ طول الجلسة.',_MODE_LIST[1]:'٢ لـ ١٠ محققين على نفس الملف، أدلة وأقوال مشتركة. هتعمل أوضة بكود وتبعته لصحابك.',_MODE_LIST[2]:'كل محقق لوحده على نفس القضية، وأول حل صح يكسب.',_MODE_LIST[3]:'فرق ضد بعض على نفس القضية.'}[_pick])
+    st.markdown('**٢) اختار الملف**')
     for item in case_catalog():
         with st.container(border=True):
             st.subheader('بلاغ '+item['id']+' • '+item['title'])
@@ -62,6 +66,7 @@ if phase == 'choose':
                 st.session_state.investigation = saved['state'] if saved else new_investigation()
                 st.session_state.detective_notes = saved.get('notes','') if saved else ''
                 st.session_state.entry_phase='game'
+                st.session_state['_want_mode']=_pick
                 for k in ['previous_mode','mode_choice','ai_suspect','focus_person','solo_snapshot','last_scene_nonce','link_feedback','reveal_solution']:
                     st.session_state.pop(k,None)
                 st.rerun()
@@ -90,7 +95,10 @@ MODES = ["🔍 العب لوحدك", "🤝 تعاون", "🏁 سباق فردي"
 MODE_KEYS = {MODES[1]: 'coop', MODES[2]: 'race', MODES[3]: 'team'}
 def team_label(unit):
     return 'الفريق ' + str(unit)[1:].translate(str.maketrans('0123456789', '٠١٢٣٤٥٦٧٨٩')) if str(unit).startswith('t') else ''
-with st.expander("طريقة اللعب: فردي، تعاون، سباق، أو فرق"):
+_want = st.session_state.pop('_want_mode', None)
+if _want in MODES and not st.session_state.get('room_token'):
+    st.session_state['mode_choice'] = _want
+with st.expander("طريقة اللعب: فردي، تعاون، سباق، أو فرق", expanded=bool(st.session_state.get('mode_choice') not in (None, MODES[0]))):
     st.caption('كل القضايا بتشتغل بنفس الأوضاع، حتى اللي هتتضاف بعدين. تعاون: الكل في تحقيق واحد. سباق فردي: كل واحد لوحده. سباق فرق: فريقين لـ ٤ فرق، كل فريق من ١ لـ ٥ لاعبين (٢ ضد ٢، ٤ ضد ٤، وغيره)، التقدم مشترك جوه الفريق ومنفصل بين الفرق.')
     mode = st.radio("تحب تلعب إزاي؟", MODES, horizontal=True, key='mode_choice', disabled=bool(st.session_state.get('room_token')))
 room_mode = mode != MODES[0]
