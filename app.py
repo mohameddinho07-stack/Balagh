@@ -19,6 +19,16 @@ h1,h2,h3,h4,[data-testid="stCaptionContainer"],label,[data-testid="stMetricValue
 button,[data-baseweb="select"]>div,textarea,input,[data-testid="stExpander"]{background:#21372e!important;color:#eee5cf!important;border-color:#6c8067!important;font-family:Cairo,Tahoma,sans-serif!important;}
 [data-testid="stAlert"],[data-testid="stForm"]{background:#1a2d26!important;color:#eee5cf!important;border-color:#6c8067!important;}
 [data-testid="stMarkdownContainer"],summary{color:#eee5cf;}
+[data-testid="stSelectbox"] [data-baseweb="select"] div,[data-testid="stSelectbox"] [data-baseweb="select"] span,[data-testid="stMultiSelect"] [data-baseweb="select"] div{color:#eee5cf!important;}
+[data-testid="stMultiSelect"] div[data-rac]{background:#21372e!important;border-color:#6c8067!important;}
+[data-testid="stMultiSelect"] [data-tag]{background:#e7d5ae!important;color:#101b19!important;border:1px solid #e7d5ae!important;}
+[data-testid="stMultiSelect"] [data-tag] span{color:#101b19!important;background:transparent!important;}
+[data-testid="stMultiSelect"] [data-tag] button{background:transparent!important;color:#101b19!important;}
+[data-testid="stMultiSelect"] [data-tag] svg{fill:#101b19!important;color:#101b19!important;}
+[data-testid="stMultiSelect"] input{background:transparent!important;color:#eee5cf!important;}
+[data-testid="stMultiSelect"] button[aria-label="Clear all"],[data-testid="stMultiSelect"] button[aria-label="Open"]{background:transparent!important;color:#eee5cf!important;}
+[data-baseweb="select"] span[data-baseweb="tag"]{background:#e7d5ae!important;color:#101b19!important;}
+[data-baseweb="select"] span[data-baseweb="tag"] *{color:#101b19!important;fill:#101b19!important;background:transparent!important;}
 </style>""", unsafe_allow_html=True)
 if st.query_params.get('lab') == 'killer' or st.session_state.get('night_mode'):
     import night_ui
