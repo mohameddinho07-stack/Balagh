@@ -35,8 +35,9 @@ function boot(){
   const outline=new THREE.Mesh(new THREE.PlaneGeometry(1.9,2.85),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(c),transparent:true,depthWrite:false}));outline.rotation.x=-Math.PI/2;outline.position.y=.012;g.add(outline);
   const sheet=new THREE.MeshStandardMaterial({color:0xeceee8,roughness:1});
   // One draped cloth over the whole body: long low mound with soft peaks at head, shoulders and feet.
-  const mound=add(new THREE.Mesh(new THREE.SphereGeometry(1,24,14),sheet));mound.scale.set(.42,.17,1.05);mound.position.set(0,.06,0);
-  [[0,-.72,.13,.2],[0,-.1,.17,.36],[-.14,.7,.1,.17],[.14,.72,.1,.17]].forEach(([px,pz,h,r])=>{const k=add(new THREE.Mesh(new THREE.SphereGeometry(r,14,10),sheet));k.scale.set(1,h/r,1);k.position.set(px,.1+h*.5,pz)});
+  const mound=add(new THREE.Mesh(new THREE.SphereGeometry(1,24,14),sheet));mound.scale.set(.36,.14,1.2);mound.position.set(0,.05,0);
+  // head, shoulders, hips, feet under the cloth
+  [[0,-.98,.12,.17,.17],[0,-.55,.14,.3,.2],[0,.05,.11,.26,.2],[-.11,.95,.08,.1,.16],[.11,.95,.08,.1,.16]].forEach(([px,pz,h,rx,rz])=>{const k=add(new THREE.Mesh(new THREE.SphereGeometry(1,14,10),sheet));k.scale.set(rx,h,rz);k.position.set(px,.1+h*.4,pz)});
   const edge=add(new THREE.Mesh(new THREE.TorusGeometry(.5,.012,6,32),new THREE.MeshStandardMaterial({color:0xb9c1c4,roughness:1})));edge.rotation.x=Math.PI/2;edge.scale.set(.85,2.1,1);edge.position.y=.03;
   const yellow=new THREE.MeshStandardMaterial({color:0xf2c230,roughness:.6});
   [[-1.1,-.4,'1'],[1.15,.5,'2'],[.9,-1.0,'3']].forEach(([mx,mz,n])=>{const t=add(new THREE.Mesh(new THREE.ConeGeometry(.12,.3,4),yellow));t.position.set(mx,.15,mz);const lc=document.createElement('canvas');lc.width=64;lc.height=64;const lx=lc.getContext('2d');lx.fillStyle='#f2c230';lx.fillRect(0,0,64,64);lx.fillStyle='#1d1d18';lx.font='bold 44px sans-serif';lx.textAlign='center';lx.fillText(n,32,48);const l=new THREE.Mesh(new THREE.PlaneGeometry(.22,.22),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(lc)}));l.position.set(mx,.34,mz);l.rotation.x=-.5;g.add(l)});
@@ -95,7 +96,7 @@ function boot(){
   for(let x of [-3.6,3.6]){let ring=mesh(new THREE.TorusGeometry(.45,.12,8,24),mat(0xcb7145),x,1,1);ring.rotation.y=Math.PI/2}
   for(let i=0;i<7;i++){let bank=mesh(new THREE.SphereGeometry(6,8,4),mat(0x625946),-30+i*11,-1,-31-Math.sin(i)*4);bank.scale.y=.5}
  }
- if(kind==='hotel')crimeScene(2.7,.03,.9,.35);else if(kind==='hankorab')crimeScene(1.8,-.04,-.9,.5);else crimeScene(3.1,.08,-.8,.2);
+ if(kind==='hotel')crimeScene(2.4,.03,.9,1.35);else if(kind==='hankorab')crimeScene(1.8,-.04,-.9,1.3);else crimeScene(2.9,.08,-.8,1.4);
  const glow=new THREE.Mesh(new THREE.RingGeometry(.38,.44,32),new THREE.MeshBasicMaterial({color:0xf4d38e,side:THREE.DoubleSide}));glow.rotation.x=-Math.PI/2;glow.visible=false;scene.add(glow);
  window.addEventListener('objectchosen',e=>{const o=objects.find(o=>o.userData.file===e.detail);if(o){glow.position.set(o.position.x,o.position.y+.35,o.position.z);glow.visible=true}});
  const cv=renderer.domElement;cv.setAttribute('aria-label','مشهد مكان القضية. كل الأدلة متاحة كمان بأزرار الملفات.');
