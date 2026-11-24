@@ -45,3 +45,13 @@ class MultiCaseTests(unittest.TestCase):
                 self.assertIn(question['id'],payload['response_format']['json_schema']['schema']['properties']['topic']['enum'])
                 turn=ask_suspect(c,s,p['id'],question['question'],'test',selector=lambda a,b:question['id'],now=100+i*10)
                 self.assertEqual(turn['answer'],question['answer'])
+
+    def test_timeline_only_uses_discovered_sources(self):
+        for cid in ['001','002','003']:
+            c=generate_case(cid);s=new_investigation()
+            self.assertEqual(timeline_entries(c,s),[])
+            inspect_evidence(c,s,'E01')
+            entries=timeline_entries(c,s)
+            self.assertTrue(entries)
+            self.assertTrue(all(set(x['evidence'])<=set(s['discovered']) for x in entries))
+            self.assertEqual([x['sort'] for x in entries],sorted(x['sort'] for x in entries))
