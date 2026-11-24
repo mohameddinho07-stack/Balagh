@@ -332,7 +332,7 @@ if use_wall:
     _STAGES.append(('wall', 'الحيطة', bool(_held_th), 'ثبّت كروت، واربط كارتين بينهم تناقض، وبعدها واجه بيه (' + _ar(len(_bd['pins'])) + ' مثبّت).'))
 else:
     _STAGES.append(('board', 'الربط', bool(state.get('deductions')), 'اربط أدلة فحصتها وشوف إيه اللي يتسجّل (' + _ar(len(state.get('deductions', []))) + ' ربط).'))
-_STAGES.append(('accuse', 'الاتهام', bool(state['finished']), 'قرار واحد: مين، وإيه الأدلة اللي بتسنده. بيفتح بعد ٣ أدلة.' if not state['finished'] else 'القضية اتقفلت.'))
+_STAGES.append(('accuse', 'الاتهام', bool(state['finished']), ('قرار واحد: مين، وإيه الأدلة اللي بتسنده.' if show_accuse else 'قرار واحد: مين، وإيه الأدلة اللي بتسنده. بيفتح بعد ٣ أدلة.') if not state['finished'] else 'القضية اتقفلت.'))
 _STAGES.append(('notes', 'ملفي', False, ''))
 _keys = [s[0] for s in _STAGES]
 if '_stage_set' in st.session_state:
