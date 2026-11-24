@@ -259,6 +259,27 @@ st.subheader(f"بلاغ {case['id']} • {public['title']}")
 st.caption(f"المكان: {public['location']} | اللي اتقتل: {public['victim']}")
 with st.expander("اقرا البلاغ وحكاية اللي حصل"):
     st.info(public["story"])
+from pilot import intro_beats, mood as case_mood, confront_people, heard_statements, resolve_confront
+_mood = case_mood(case['id'])
+if _mood:
+    st.markdown('<div style="border-right:4px solid '+_mood['color']+';padding:.3rem .9rem;margin:.2rem 0 .6rem;opacity:.92">'+_mood['line']+'</div>', unsafe_allow_html=True)
+_beats = intro_beats(case['id'])
+_ikey = 'intro:'+case['id']+':'+str(room.get('code','') if room_mode else 'solo')
+if _beats and not state['discovered'] and not state['interviews'] and not state['finished'] and not st.session_state.get(_ikey+':done'):
+    _step = min(st.session_state.get(_ikey, 0), len(_beats)-1)
+    for _who, _line in _beats[:_step+1]:
+        st.markdown('**'+_who+':** '+_line)
+    _c1, _c2 = st.columns(2)
+    if _c1.button('ابدأ التحقيق' if _step == len(_beats)-1 else 'كمّل', key=_ikey+':next', type='primary'):
+        if _step == len(_beats)-1:
+            st.session_state[_ikey+':done'] = True
+        else:
+            st.session_state[_ikey] = _step+1
+        st.rerun()
+    if _c2.button('تخطّى', key=_ikey+':skip'):
+        st.session_state[_ikey+':done'] = True
+        st.rerun()
+    st.stop()
 # Each case owns its scene and public evidence. No truth or credentials cross to the browser.
 crime_scene = components.declare_component('balagh_crime', path=str(Path(__file__).parent/'crime_frontend'/'crime_frontend'))
 scene_scope = '|'.join([case['id'], mode, str(room.get('me','')) if room_mode else state.setdefault('attempt_id',__import__('uuid').uuid4().hex)])
@@ -297,6 +318,35 @@ if isinstance(scene_event, dict) and scene_event.get('nonce') != st.session_stat
             inspect_evidence(case,state,eid)
         st.rerun()
 
+_cps = confront_people(case, state)
+if _cps and not state['finished']:
+    with st.expander('🎯 واجهه حد بدليل'):
+        st.caption('اختار حد، وكلام قاله، ودليل فحصته. لو الدليل بيكذّب الكلام هيرد عليك.')
+        if st.session_state.get('confront_msg'):
+            st.info(st.session_state.pop('confront_msg'))
+        _who = st.selectbox('هتواجه مين؟', [p['id'] for p in _cps], format_func=lambda i: next(p['name'] for p in _cps if p['id']==i), key='confront_person')
+        _heard = heard_statements(case, state, _who)
+        if not _heard:
+            st.write('اسمع منه الأول. اسأله من المشهد وبعدين ارجع هنا.')
+        else:
+            _sid = st.selectbox('كلامه', [h['id'] for h in _heard], format_func=lambda i: next(h['answer'] for h in _heard if h['id']==i), key='confront_statement')
+            _ev = [e for e in evidence_cards(case) if e['id'] in state['discovered']]
+            _eid = st.selectbox('دليلك', [e['id'] for e in _ev], format_func=lambda i: next(e['id']+' · '+e['title'] for e in _ev if e['id']==i), key='confront_evidence') if _ev else None
+            if _eid and st.button('واجهه', key='confront_go'):
+                _kind, _out = resolve_confront(case, state, _who, _sid, _eid)
+                if _kind == 'unlock':
+                    try:
+                        persist_room('interview', {'suspect': _who, 'topic': _out['id']})
+                        if not room_mode:
+                            record_answer(case, state, _who, _out['id'])
+                        st.session_state['confront_msg'] = _out['answer']
+                        st.rerun()
+                    except ValueError as e:
+                        st.warning(str(e))
+                elif _kind == 'done':
+                    st.info(_out['answer'])
+                else:
+                    st.warning(_out)
 solo_unit = room_mode and room["unit_size"]==1
 if state["finished"]:
     result = state["result"]
