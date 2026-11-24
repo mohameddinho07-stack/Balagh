@@ -41,6 +41,11 @@ CONFRONT = {
 WRONG = 'ده مش بيقول لي حاجة. جرّب دليل تاني على نفس الكلام.'
 
 
+def confront_only(case_id):
+    """Question ids reached only through a confrontation, so they are not plain menu items."""
+    return {c['unlocks'] for c in CONFRONT.get(case_id, [])}
+
+
 def intro_beats(case_id):
     return list(INTRO.get(case_id, []))
 
