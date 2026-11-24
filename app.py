@@ -120,11 +120,13 @@ def team_label(unit):
 _want = st.session_state.pop('_want_mode', None)
 if _want in MODES and not st.session_state.get('room_token'):
     st.session_state['mode_choice'] = _want
-if st.session_state.get('mode_choice') in (None, MODES[0]) and not st.session_state.get('room_token'):
-    st.markdown('<span class="modeexp-mark"></span><style>@media(max-width:650px){[data-testid=stElementContainer]:has(.modeexp-mark)+[data-testid=stElementContainer]{display:none}[data-testid=stElementContainer]:has(.modeexp-mark){display:none}[data-testid=stBaseButton-secondary]{min-height:36px!important;padding:.1rem .6rem!important}}</style>', unsafe_allow_html=True)
-with st.expander("طريقة اللعب: فردي، تعاون، سباق، أو فرق", expanded=bool(st.session_state.get('mode_choice') not in (None, MODES[0]))):
-    st.caption('كل القضايا بتشتغل بنفس الأوضاع، حتى اللي هتتضاف بعدين. تعاون: الكل في تحقيق واحد. سباق فردي: كل واحد لوحده. سباق فرق: فريقين لـ ٤ فرق، كل فريق من ١ لـ ٥ لاعبين (٢ ضد ٢، ٤ ضد ٤، وغيره)، التقدم مشترك جوه الفريق ومنفصل بين الفرق.')
-    mode = st.radio("تحب تلعب إزاي؟", MODES, horizontal=True, key='mode_choice', disabled=bool(st.session_state.get('room_token')))
+_solo_view = st.session_state.get('mode_choice') in (None, MODES[0]) and not st.session_state.get('room_token')
+if _solo_view:
+    st.markdown('<style>@media(max-width:650px){.st-key-modebox{display:none!important}}</style>', unsafe_allow_html=True)
+with st.container(key='modebox'):
+    with st.expander("طريقة اللعب: فردي، تعاون، سباق، أو فرق", expanded=bool(st.session_state.get('mode_choice') not in (None, MODES[0]))):
+        st.caption('كل القضايا بتشتغل بنفس الأوضاع، حتى اللي هتتضاف بعدين. تعاون: الكل في تحقيق واحد. سباق فردي: كل واحد لوحده. سباق فرق: فريقين لـ ٤ فرق، كل فريق من ١ لـ ٥ لاعبين (٢ ضد ٢، ٤ ضد ٤، وغيره)، التقدم مشترك جوه الفريق ومنفصل بين الفرق.')
+        mode = st.radio("تحب تلعب إزاي؟", MODES, horizontal=True, key='mode_choice', disabled=bool(st.session_state.get('room_token')))
 room_mode = mode != MODES[0]
 race_mode = mode == MODES[2]
 team_mode = mode == MODES[3]
@@ -357,7 +359,7 @@ def _stage_label(k):
     mark = '✓' if s[2] else _ar(n)
     if k == 'accuse' and room_mode and room.get('proposal') and room.get('me') not in room.get('approvals', []) and not state['finished']: mark = '❗'
     return mark + ' ' + s[1]
-st.markdown('<style>.st-key-stage [data-testid=stRadioGroup]{flex-wrap:wrap;gap:.3rem}@media(max-width:650px){[data-testid=stMainBlockContainer]{padding-top:3.2rem!important}[data-testid=stMainBlockContainer] h3{font-size:1.25rem!important;padding:0!important;line-height:1.7!important}[data-testid=stVerticalBlock]{gap:.55rem!important}.st-key-stage [data-testid=stRadioOption]{min-height:38px!important;padding:.15rem .65rem!important}.st-key-stage [data-testid=stRadioOption] p{font-size:.9rem}}.st-key-stage [data-testid=stRadioOption]{background:#21372e;border:1px solid #6c8067;border-radius:999px;padding:.3rem .9rem;min-height:44px;align-items:center;margin:0}.st-key-stage [data-testid=stRadioOption][data-selected=true]{background:#dec180;border-color:#dec180}.st-key-stage [data-testid=stRadioOption][data-selected=true] p{color:#15251e!important;font-weight:700}.st-key-stage [data-testid=stRadioOption]>div>div:first-child{display:none}[data-testid=stExpander] summary,[data-testid=stExpander] details>summary{background:#21372e!important;color:#eee5cf!important}[data-testid=stExpander] summary *{color:#eee5cf!important}</style>', unsafe_allow_html=True)
+st.markdown('<style>.st-key-stage [data-testid=stRadioGroup]{flex-wrap:wrap;gap:.3rem}@media(max-width:650px){[data-testid=stMainBlockContainer]{padding-top:3.2rem!important}.st-key-balagh_entry_persistent{position:fixed!important;top:60px;left:4px;width:180px!important;height:46px;overflow:hidden;z-index:1000}.st-key-balagh_entry_persistent iframe{height:46px!important}.st-key-stage [data-testid=stRadioGroup]{gap:.18rem!important;flex-wrap:nowrap!important;justify-content:space-between}.st-key-stage [data-testid=stRadioOption]{min-height:34px!important;padding:.1rem .3rem!important;flex:1 1 0;justify-content:center}.st-key-stage [data-testid=stRadioOption] p{font-size:.72rem!important;white-space:nowrap}[data-testid=stMainBlockContainer] h3{font-size:1.25rem!important;padding:0!important;line-height:1.7!important}[data-testid=stVerticalBlock]{gap:.55rem!important}.st-key-stage [data-testid=stRadioOption]{min-height:38px!important;padding:.15rem .65rem!important}.st-key-stage [data-testid=stRadioOption] p{font-size:.9rem}}.st-key-stage [data-testid=stRadioOption]{background:#21372e;border:1px solid #6c8067;border-radius:999px;padding:.3rem .9rem;min-height:44px;align-items:center;margin:0}.st-key-stage [data-testid=stRadioOption][data-selected=true]{background:#dec180;border-color:#dec180}.st-key-stage [data-testid=stRadioOption][data-selected=true] p{color:#15251e!important;font-weight:700}.st-key-stage [data-testid=stRadioOption]>div>div:first-child{display:none}[data-testid=stExpander] summary,[data-testid=stExpander] details>summary{background:#21372e!important;color:#eee5cf!important}[data-testid=stExpander] summary *{color:#eee5cf!important}</style>', unsafe_allow_html=True)
 stage = st.radio('المرحلة', _keys, format_func=_stage_label, horizontal=True, key='stage', label_visibility='collapsed')
 _cur = next(s for s in _STAGES if s[0] == stage)
 if _cur[3]:
