@@ -7,6 +7,7 @@ holds answers and the winning verdict; the browser never receives either.
 import json
 from game_engine import CASE_REGISTRY, generate_case
 from ai_interrogation import CONTINUITY
+from board import catalog_theories, TIMELINE_SLOTS
 
 
 def build_catalog(registry=None, generate=None):
@@ -27,6 +28,9 @@ def build_catalog(registry=None, generate=None):
             'killer': case['truth']['killer'],
             'required': list(case['truth']['required_evidence']),
             'continuity': [r for r in CONTINUITY + list(case.get('continuity', [])) if r.get('case', cid) == cid],
+            # Investigation board pilot: authored theory sets and timeline slots.
+            'theories': catalog_theories(case),
+            'slots': list(TIMELINE_SLOTS.get(cid, [])),
         }
     return out
 
