@@ -77,6 +77,23 @@ class AppFlowTests(unittest.TestCase):
             self.assertEqual(a.session_state['detective_notes'],'solo private')
             self.assertFalse(a.exception)
 
+    def test_room_exit_to_picker_never_archives_room_as_solo(self):
+        from unittest.mock import patch
+        from game_engine import new_investigation
+        a=started();a.session_state['detective_notes']='solo note';a.session_state['investigation']['discovered']=['E01'];a.run()
+        a.secrets.update(SUPABASE_URL='https://test.invalid',SUPABASE_KEY='test')
+        room={'state':new_investigation(),'code':'TEST02','players':[{'name':'test','id':'p1'},{'name':'test2','id':'p2'}],'me':'p1','revision':0,'mode':'coop','notes':'','status':'active','proposal':None,'approvals':[]}
+        room['state']['discovered']=['E02','E03']
+        with patch('room_client.rpc',return_value=room):
+            a.radio(key='mode_choice').set_value('🎮 العب مع صحابك').run()
+            a.session_state['room_token']='test-token';a.run()
+            next(b for b in a.button if b.label=='اخرج من الأوضة على الجهاز ده').click().run()
+            next(b for b in a.button if b.label=='ارجع لاختيار القضية').click().run()
+            a.button(key='open_case_001').click().run()
+            self.assertEqual(a.session_state['investigation']['discovered'],['E01'])
+            self.assertEqual(a.session_state['detective_notes'],'solo note')
+            self.assertFalse(a.exception)
+
     def test_ai_has_equal_choices_and_no_default(self):
         from unittest.mock import patch
         from ai_interrogation import ask_suspect as real_ask
