@@ -259,6 +259,7 @@ st.subheader(f"بلاغ {case['id']} • {public['title']}")
 st.caption(f"المكان: {public['location']} | اللي اتقتل: {public['victim']}")
 with st.expander("اقرا البلاغ وحكاية اللي حصل"):
     st.info(public["story"])
+import importlib, pilot; importlib.reload(pilot)  # picks up data edits without a manual reboot
 from pilot import confront_only, intro_beats, mood as case_mood, confront_people, heard_statements, resolve_confront
 _mood = case_mood(case['id'])
 if _mood:
