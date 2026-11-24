@@ -358,18 +358,20 @@ else:
     st.text_area("اكتب اللي واخد بالك منه هنا، هيفضل معاك طول ما جلسة اللعب شغّالة بس", key="detective_notes", height=150, max_chars=6000)
 if not state["finished"]:
     if st.button("💡 ادّيني طرف خيط من غير حرق"):
-        state["hints_used"] += 1
-        persist_room('hint')
-        if room_mode: st.rerun()
+        if room_mode:
+            persist_room('hint')
+            st.rerun()
+        else:
+            state["hints_used"] += 1
     if state["hints_used"]:
         st.info(case.get('hints',['خلي بالك، وقت دخول اللي عملها مش لازم يبقى هو وقت الموت. راجع الزيارة والكوباية والسبب. البصمة لوحدها أو الخناقة لوحدها مش كفاية.'])[min(state['hints_used']-1,len(case.get('hints',[0]))-1)])
     st.subheader("⚖️ مين المتهم وإيه دليلك؟")
     st.caption("اتهام نهائي واحد، لو المتهم أو الأدلة غلط هتخرج من السباق. الفوز محتاج ربط الزيارة بالكوباية والدافع." if race_mode else "اقتراحك لازم صاحبك يوافق عليه عشان التحقيق يقفل." if room_mode else "قبل ما تثبّت الاتهام، راجع نفسك: مين عملها؟ وإيه اللي يثبت كلامك؟ اختار الأدلة اللي بتربط زيارته باللي حصل وسببه. الشك لوحده مش كفاية. ليك قرار أخير واحد في المحاولة.")
     cards = {e["id"]: e for e in evidence_cards(case)}
     with st.form("accusation"):
-        selected = st.selectbox("مين اللي عملها؟", [s["name"] for s in case["characters"]], index=None, placeholder="اختار حد")
-        evidence_ids = st.multiselect("إيه الأدلة اللي بصّيت عليها وبتسند كلامك؟", state["discovered"], format_func=lambda x: f"{x} • {cards[x]['title']}")
-        confirmed = st.checkbox("أيوه، ده قراري الأخير وعارف إن المحاولة هتقفل بعده")
+        selected = st.selectbox("مين اللي عملها؟", [s["name"] for s in case["characters"]], index=None, placeholder="اختار حد",key="final_suspect_"+scene_scope)
+        evidence_ids = st.multiselect("إيه الأدلة اللي بصّيت عليها وبتسند كلامك؟", state["discovered"], format_func=lambda x: f"{x} • {cards[x]['title']}",key="final_evidence_"+scene_scope)
+        confirmed = st.checkbox("أيوه، ده قراري الأخير وعارف إن المحاولة هتقفل بعده",key="final_confirm_"+scene_scope)
         submitted = st.form_submit_button("ثبّت الاتهام", type="primary")
     if submitted:
         if not confirmed or selected is None or not evidence_ids:
