@@ -227,7 +227,7 @@ if room_mode:
         if state['finished']:
             st.warning(('اتهام فريقكم' if team_mode else 'اتهامك') + ' النهائي ماطلعش حل صحيح مكتمل بالأدلة. خرجتوا من السباق والباقيين لسه بيكمّلوا. النتيجة هتظهر هنا لما يخلصوا.' if team_mode else 'اتهامك النهائي ماطلعش حل صحيح مكتمل بالأدلة. خرجت من السباق والباقيين لسه بيكمّلوا. النتيجة هتظهر هنا لما يخلصوا.')
             done = sum(1 for v in room['unit_done'].values() if v)
-            st.caption('خلصوا اتهامهم: ' + str(done) + ' من ' + str(len(room['unit_done']) or len(room['players'])))
+            st.caption('خلصوا اتهامهم: ' + str(done) + ' من ' + str(room.get('team_count') if team_mode else len(room['players'])))
             st.stop()
 else:
     if "case" not in st.session_state:
