@@ -326,7 +326,7 @@ if isinstance(scene_event, dict) and scene_event.get('nonce') != st.session_stat
         st.rerun()
 
 _cps = confront_people(case, state)
-if _cps and not state['finished']:
+if _cps and not state['finished'] and state['discovered'] and state['interviews']:
     with st.expander('🎯 واجهه حد بدليل'):
         st.caption('اختار حد، وكلام قاله، ودليل فحصته. لو الدليل بيكذّب الكلام هيرد عليك.')
         if st.session_state.get('confront_msg'):
