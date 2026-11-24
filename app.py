@@ -51,6 +51,8 @@ if phase == 'choose':
                     st.session_state.pop(k,None)
                 st.rerun()
             except (ValueError,TypeError) as e:st.warning(str(e))
+    from brand import wordmark_html
+    st.markdown(wordmark_html(), unsafe_allow_html=True)
     st.title('اختار البلاغ')
     st.caption('٣ حكايات من خيالنا. كل واحدة مكان، وناس، وحقيقة مختلفة. اختار، وافتح عينك.')
     for item in case_catalog():
