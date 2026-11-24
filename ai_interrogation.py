@@ -60,6 +60,18 @@ def request_topic(payload, api_key):
         raise AIUnavailable("الرد من خدمة AI ما وصلش بشكل سليم. جرّب بعد شوية أو كمّل بالأسئلة الجاهزة.") from None
 
 
+
+def consistent_answer(case,state,suspect_id,topic,answer):
+    """Later confrontations do not silently restore an earlier denial."""
+    answered={x['question_id'] for x in state['interviews']}
+    if case['id']=='001' and suspect_id=='nadine' and topic=='n1' and 'n2' in answered:
+        return 'أنا قلت عشرة بالليل في الأول، بس خلاص قلتلك إني رجعت زيارة وقدّمت له الكوباية. مش هارجع أنكر الزيارة تاني.'
+    if case['id']=='002' and suspect_id=='bassem' and topic=='s204' and answered & {'s206','s207'}:
+        return 'أنا قلت حكاية الفانوس في الأول. بعد الصورة قلتلك إني دخلت مع دينهو، ومش هارجع أقول إني كنت عند الفانوس.'
+    if case['id']=='003' and suspect_id=='dalia' and topic=='b304' and answered & {'b306','b307'}:
+        return 'أنا قلت غرفة الماكينات في الأول. بعد المواجهة قلتلك إني كنت عند لوحة الخدمة، ومش هارجع أنكر مكاني اللي في المحضر.'
+    return answer
+
 def ask_suspect(case, state, suspect_id, question, api_key, selector=request_topic, now=None):
     if suspect_id not in {s["id"] for s in case["characters"]}:
         raise AIUnavailable("اختار شخصية من اللي في القضية.")
@@ -83,7 +95,6 @@ def ask_suspect(case, state, suspect_id, question, api_key, selector=request_top
     if topic not in allowed:
         raise AIUnavailable("الرد ما عداش مراجعة اللعبة. مفيش معلومة اتضافت للقضية.")
     suspect = next(s for s in case["characters"] if s["id"] == suspect_id)
-    admitted = any(x["question_id"] == "n2" for x in state["interviews"])
     suspect_history = [t for t in history if t.get("suspect_id", "nadine") == suspect_id]
     if topic == "repeat" and suspect_history:
         answer = suspect_history[-1]["answer"]
@@ -92,10 +103,9 @@ def ask_suspect(case, state, suspect_id, question, api_key, selector=request_top
     elif topic in {q["id"] for q in suspect["interviews"]}:
         entry = record_answer(case, state, suspect_id, topic)
         answer = entry["answer"]
-        if topic == "n1" and admitted:
-            answer = "أنا قلت عشرة بالليل في الأول، بس خلاص قلتلك إني رجعت زيارة وقدّمت له الكوباية. مش هارجع أنكر الزيارة تاني."
     else:
         answer = "مش عندي حاجة أضيفها في النقطة دي. اسألني عن اللي قلته أو واجهني بدليل من الملف."
+    answer=consistent_answer(case,state,suspect_id,topic,answer)
     turn = {"suspect_id": suspect_id, "suspect": suspect["name"], "question": question, "topic": topic, "answer": answer}
     history.append(turn)
     return turn
