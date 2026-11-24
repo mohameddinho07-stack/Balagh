@@ -19,6 +19,10 @@ button,[data-baseweb="select"]>div,textarea,input,[data-testid="stExpander"]{bac
 [data-testid="stAlert"],[data-testid="stForm"]{background:#1a2d26!important;color:#eee5cf!important;border-color:#6c8067!important;}
 [data-testid="stMarkdownContainer"],summary{color:#eee5cf;}
 </style>""", unsafe_allow_html=True)
+if st.query_params.get('lab') == 'killer':  # hidden mode, not in any menu
+    import night_ui
+    night_ui.run()
+    st.stop()
 from pathlib import Path
 import streamlit.components.v1 as components
 _entry_component = components.declare_component('balagh_entry', path=str(Path(__file__).parent/'entry_frontend'/'entry_frontend'))
