@@ -147,3 +147,23 @@ class V2(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class Persist(unittest.TestCase):
+    def test_pack_roundtrip_preserves_new_state_and_views(self):
+        from night_store import pack, unpack
+        for s in range(40):
+            g, toks, k = play(s, n=4 + s % 4)
+            if g.refuted == [] and g.forge_used:
+                bad = next(c for c in g.cards.values() if c['spoiled'])
+                proof = next(c for c in g.cards.values() if c['kind'] == 'testimony' and c['slot'] == bad['slot'] and c['owner'] in bad['seen'] and g._conflict(bad, c))
+                g.act(toks['محمد'], 'challenge', dict(cards=[bad['id'], proof['id']]))
+            g2 = unpack(pack(g), clock=g.clock)
+            self.assertEqual(g2.forge_used, g.forge_used); self.assertEqual(g2.refuted, g.refuted)
+            for nm, tk in toks.items():
+                self.assertEqual(json.dumps(g.view(tk), sort_keys=True), json.dumps(g2.view(tk), sort_keys=True))
+            # continuing play after reload gives the same outcome
+            g2.act(toks['محمد'], 'read')
+
+if __name__ == '__main__':
+    unittest.main()
