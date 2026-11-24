@@ -46,7 +46,7 @@ function boot(){
   tag(cyl(.23,.18,.4,blue,.8,1.82,.8),'E07');let handle=tag(mesh(new THREE.TorusGeometry(.15,.035,8,20),blue,1.04,1.82,.8),'E07');handle.rotation.y=Math.PI/2;tag(cyl(.36,.36,.03,paper,.8,1.62,.8),'E07');
   tag(cyl(.28,.28,.08,brass,1.6,1.68,.2),'E05');tag(cyl(.24,.24,.01,paper,1.6,1.73,.2),'E05');tag(box(.025,.01,.17,dark,1.6,1.74,.15),'E05');
   tag(box(.85,.18,.6,dark,-.25,1.73,-.1),'E03');tag(cyl(.21,.21,.03,brass,-.25,1.84,-.05),'E03');tag(box(.95,.12,.14,dark,-.25,1.96,-.25),'E03');packet('E01',-.7,1.64,1);
-  ['E02','E04','E06','E08','E09'].forEach((id,i)=>packet(id,-2+i*.85,.18,2.8));
+  ['E02','E04','E06','E08','E09'].forEach((id,i)=>packet(id,-2+i*.85,.18,2.0));
  }else if(kind==='hankorab'){
   box(27,.3,18,sand,0,-.2,2);const tentMat=mat(0xb78d50),tentDark=mat(0x493e33);
   function tent(x,z,rotation=0){const group=new THREE.Group();const points=new Float32Array([-1.7,0,-1.6,1.7,0,-1.6,0,2,-1.6,-1.7,0,1.6,0,2,1.6,1.7,0,1.6,-1.7,0,-1.6,0,2,-1.6,-1.7,0,1.6,0,2,-1.6,0,2,1.6,-1.7,0,1.6,1.7,0,-1.6,1.7,0,1.6,0,2,-1.6,0,2,-1.6,1.7,0,1.6,0,2,1.6]);const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(points,3));g.computeVertexNormals();const m=new THREE.Mesh(g,new THREE.MeshStandardMaterial({color:0xb88e52,side:THREE.DoubleSide,roughness:.9}));m.castShadow=true;group.add(m);group.position.set(x,0,z);group.rotation.y=rotation;scene.add(group);box(2,.06,2.8,tentDark,x,.04,z);}
@@ -57,8 +57,8 @@ function boot(){
   tag(box(.5,.4,.3,dark,-1.7,1.8,-2.2),'E02');for(let dx of [-.3,.3]){let leg=box(.045,1.7,.045,dark,-1.7+dx,.85,-2.2);leg.rotation.z=dx*.4}tag(cyl(.15,.15,.15,brass,-1.7,1.8,-1.99),'E02').rotation.x=Math.PI/2;
   box(2,.1,1.2,wood,1.5,.75,4);for(let x of [.8,2.2])box(.1,.75,.1,dark,x,.35,4);
   lamp(2.2,.85,4);tag(cyl(.23,.27,.4,brass,2.2,1.5,4),'E05');
-  tag(box(1.1,.1,.7,green,-3,.5,2.8),'E03');packet('E06',-3,.6,2.8);
-  ['E01','E04','E08','E09'].forEach((id,i)=>packet(id,-1.6+i*.85,.13,5.3));
+  tag(box(1.1,.1,.7,green,-3,.5,2.8),'E03');packet('E06',-2,.13,2.4);
+  ['E01','E04','E08','E09'].forEach((id,i)=>packet(id,-1.6+i*.85,.13,3.9));
   for(let i=0;i<7;i++)mesh(new THREE.SphereGeometry(1.3,6,4),mat(0x695c47),-11+i*3,.1,-6-Math.sin(i)*2).scale.set(1,.5,.7);
  }else{
   // Cutaway upper deck of a fictional small boat. Water and distant desert banks surround it.
