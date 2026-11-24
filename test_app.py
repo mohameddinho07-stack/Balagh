@@ -32,7 +32,7 @@ class AppFlowTests(unittest.TestCase):
         assert a.session_state['investigation']['result']['success']
         assert not a.exception
         
-        a=started();a.radio[0].set_value('🎮 العب مع صحابك').run()
+        a=started();a.radio[0].set_value('🤝 تعاون').run()
         assert not a.exception
         assert any('ربط الأوض مش جاهز' in m.value for m in a.info)
         assert all(x.label=='ارجع لاختيار القضية' for x in a.button)
@@ -65,9 +65,9 @@ class AppFlowTests(unittest.TestCase):
         from game_engine import new_investigation
         a=started();a.session_state['detective_notes']='solo private';a.run()
         a.secrets.update(SUPABASE_URL='https://test.invalid',SUPABASE_KEY='test')
-        room={'state':new_investigation(),'code':'TEST01','players':[{'name':'test','id':'p1'},{'name':'test2','id':'p2'}],'me':'p1','revision':0,'mode':'coop','notes':'','status':'active','proposal':None,'approvals':[]}
+        room={'state':new_investigation(),'code':'TEST01','players':[{'name':'test','id':'p1','unit':'0'},{'name':'test2','id':'p2','unit':'0'}],'me':'p1','revision':0,'mode':'coop','notes':'','status':'active','proposal':None,'approvals':[],'case_id':'001','started':True,'host':'p1','team_count':1,'team_size':1,'max_players':2,'winner_unit':None,'my_unit':'0','unit_size':2,'urev':0,'unit_done':{}}
         with patch('room_client.rpc',return_value=room):
-            a.radio(key='mode_choice').set_value('🎮 العب مع صحابك').run()
+            a.radio(key='mode_choice').set_value('🤝 تعاون').run()
             self.assertEqual(len(a.session_state['solo_snapshot']),3)
             a.session_state['room_token']='test-token';a.run()
             self.assertTrue(a.radio(key='mode_choice').disabled)
@@ -82,10 +82,10 @@ class AppFlowTests(unittest.TestCase):
         from game_engine import new_investigation
         a=started();a.session_state['detective_notes']='solo note';a.session_state['investigation']['discovered']=['E01'];a.run()
         a.secrets.update(SUPABASE_URL='https://test.invalid',SUPABASE_KEY='test')
-        room={'state':new_investigation(),'code':'TEST02','players':[{'name':'test','id':'p1'},{'name':'test2','id':'p2'}],'me':'p1','revision':0,'mode':'coop','notes':'','status':'active','proposal':None,'approvals':[]}
+        room={'state':new_investigation(),'code':'TEST02','players':[{'name':'test','id':'p1','unit':'0'},{'name':'test2','id':'p2','unit':'0'}],'me':'p1','revision':0,'mode':'coop','notes':'','status':'active','proposal':None,'approvals':[],'case_id':'001','started':True,'host':'p1','team_count':1,'team_size':1,'max_players':2,'winner_unit':None,'my_unit':'0','unit_size':2,'urev':0,'unit_done':{}}
         room['state']['discovered']=['E02','E03']
         with patch('room_client.rpc',return_value=room):
-            a.radio(key='mode_choice').set_value('🎮 العب مع صحابك').run()
+            a.radio(key='mode_choice').set_value('🤝 تعاون').run()
             a.session_state['room_token']='test-token';a.run()
             next(b for b in a.button if b.label=='اخرج من الأوضة على الجهاز ده').click().run()
             next(b for b in a.button if b.label=='ارجع لاختيار القضية').click().run()

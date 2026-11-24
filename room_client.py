@@ -14,18 +14,8 @@ def rpc(url, key, op, token='', code='', payload=None):
     try:
         with urllib.request.urlopen(req, timeout=20) as response:
             result = json.load(response)
-            # Canonical local display copy preserves Arabic time isolation/spacing.
-            # IDs and evidence gates are still validated by the database.
-            if 'state' in result:
-                from game_engine import generate_case
-                case = generate_case()
-                questions = {q['id']: q for ch in case['characters'] for q in ch['interviews']}
-                for entry in result['state'].get('interviews', []):
-                    q = questions.get(entry.get('question_id'))
-                    if q: entry.update(question=q['question'], answer=q['answer'])
-                for turn in result['state'].get('ai_interviews', []):
-                    q = questions.get(turn.get('topic'))
-                    if q and turn['topic'] != 'n1': turn['answer'] = q['answer']
+            # Answers come from the server catalog, which is generated from the same
+            # case registry (display copy included), so every case works the same way.
             return result
     except urllib.error.HTTPError as exc:
         try:

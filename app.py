@@ -71,7 +71,7 @@ if phase == 'choose':
                 for k in ['previous_mode','mode_choice','ai_suspect','focus_person','solo_snapshot','last_scene_nonce','link_feedback','reveal_solution']:
                     st.session_state.pop(k,None)
                 st.rerun()
-    st.caption('الأماكن الحقيقية إلهام للأجواء بس. المعسكر والمركب وكل الجرائم والشخصيات مؤلّفة. دي مش معلومات سفر أو تصريح زيارة.')
+    st.caption('الأماكن الحقيقية إلهام للأجواء بس. المخيم والمركب وكل الجرائم والشخصيات مؤلّفة. دي مش معلومات سفر أو تصريح زيارة.')
     st.stop()
 if st.button('ارجع لاختيار القضية'):
     archive_solo()
@@ -80,20 +80,24 @@ if st.button('ارجع لاختيار القضية'):
         st.stop()
     st.session_state.entry_phase = 'choose'
     st.rerun()
-selected_case_id=st.session_state.get('case',{}).get('id','001') if st.session_state.get('case') else '001'
-with st.expander("طريقة اللعب: فردي، مع صحابك، أو سباق"):
-    if selected_case_id!='001':
-        st.caption('القضية دي فردي دلوقتي. التعاوني والسباق شغالين في قضية الفندق بس، لحد ما قواعد السيرفر تتختبر للقضايا الجديدة.')
-    mode = st.radio("تحب تلعب إزاي؟", ["🔍 العب لوحدك", "🎮 العب مع صحابك", "🏁 سباق محققين"], horizontal=True, key='mode_choice', disabled=selected_case_id!='001' or bool(st.session_state.get('room_token')))
-room_mode = mode != "🔍 العب لوحدك"
-race_mode = mode == "🏁 سباق محققين"
+MODES = ["🔍 العب لوحدك", "🤝 تعاون", "🏁 سباق فردي", "⚔️ سباق فرق"]
+MODE_KEYS = {MODES[1]: 'coop', MODES[2]: 'race', MODES[3]: 'team'}
+def team_label(unit):
+    return 'الفريق ' + str(unit)[1:].translate(str.maketrans('0123456789', '٠١٢٣٤٥٦٧٨٩')) if str(unit).startswith('t') else ''
+with st.expander("طريقة اللعب: فردي، تعاون، سباق، أو فرق"):
+    st.caption('كل القضايا بتشتغل بنفس الأوضاع، حتى اللي هتتضاف بعدين. تعاون: الكل في تحقيق واحد. سباق فردي: كل واحد لوحده. سباق فرق: فريقين لـ ٤ فرق، كل فريق من ١ لـ ٥ لاعبين (٢ ضد ٢، ٤ ضد ٤، وغيره)، التقدم مشترك جوه الفريق ومنفصل بين الفرق.')
+    mode = st.radio("تحب تلعب إزاي؟", MODES, horizontal=True, key='mode_choice', disabled=bool(st.session_state.get('room_token')))
+room_mode = mode != MODES[0]
+race_mode = mode == MODES[2]
+team_mode = mode == MODES[3]
+competitive = race_mode or team_mode
 room = None
 previous_mode = st.session_state.get('previous_mode')
 if previous_mode is not None and previous_mode != mode:
-    if previous_mode == "🔍 العب لوحدك":
+    if previous_mode == MODES[0]:
         archive_solo()
         st.session_state.solo_snapshot = (st.session_state.get('case'), st.session_state.get('investigation'),st.session_state.get('detective_notes',''))
-    else:
+    elif mode == MODES[0]:
         snapshot=st.session_state.get('solo_snapshot', (None,None,''))
         old_case, old_state=snapshot[:2]
         st.session_state.detective_notes=snapshot[2] if len(snapshot)>2 else ''
@@ -104,12 +108,7 @@ if st.session_state.get('room_token'):
     st.caption('إنت جوه أوضة. اخرج منها على الجهاز ده الأول لو عايز تغيّر طريقة اللعب أو القضية.')
 if room_mode:
     from room_client import rpc, RoomError
-    st.subheader("سباق محققين" if race_mode else "أوضة تحقيق ليك ولصاحبك")
-    if race_mode:
-        st.caption("كل واحد يحقق لوحده. أول حل صح بالمتهم والأدلة يكسب. اتهام نهائي واحد لكل لاعب، الغلط يخرجك، ولو الاتنين غلط محدش يكسب. السباق يبدأ لما الاتنين يدخلوا.")
-        st.caption("دي نفس القضية الموجودة في الفردي والتعاوني. اللي عارف حلها من قبل عنده أفضلية، مش مسابقة عمياء أو ضد الغش.")
-    else:
-        st.caption("تعاون بين اتنين، مش أدوار سرية. الأدلة والاستجوابات مشتركة، والنوتة خاصة بكل لاعب. الاتهام لازم موافقة الاتنين.")
+    st.subheader({'coop':'أوضة تعاون','race':'سباق محققين','team':'سباق فرق'}[MODE_KEYS[mode]])
     try:
         db_url, db_key = st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_KEY"]
     except Exception:
@@ -119,9 +118,24 @@ if room_mode:
         return rpc(db_url, db_key, op, token=st.session_state.get('room_token','') if token is None else token,
                    code=code, payload=payload)
     if not st.session_state.get('room_token'):
+        if race_mode:
+            st.caption("كل واحد يحقق لوحده على نفس القضية. اتهام نهائي واحد لكل لاعب، الغلط يخرجك. أول حل صح بالمتهم والأدلة يكسب. صاحب الأوضة يبدأ السباق لما الكل يدخل.")
+        elif team_mode:
+            st.caption("فرق متنافسة على نفس القضية. جوه الفريق الأدلة والأقوال مشتركة والنوتة خاصة، واتهام الفريق لازم كل أعضائه يوافقوا عليه. أول فريق يوصل للحل الصح بالأدلة يكسب، والفريق الغلط يخرج.")
+        else:
+            st.caption("الكل في تحقيق واحد، من ٢ لـ ١٠ لاعبين. الأدلة والاستجوابات مشتركة، والنوتة خاصة بكل لاعب. الاتهام لازم يوافق عليه كل اللي في الأوضة.")
+        st.caption("دي نفس القضية الموجودة في الفردي. اللي عارف حلها من قبل عنده أفضلية، مش مسابقة عمياء أو ضد الغش.")
+        picked_case_id = (st.session_state.get('case') or {}).get('id','001')
         with st.form('room_entry'):
             player_name = st.text_input('اسمك في الأوضة', max_chars=30)
-            room_code = st.text_input('كود الأوضة لو هتدخل عند صاحبك', max_chars=10)
+            st.caption('لو بتعمل أوضة، القضية هتبقى القضية اللي فاتحها دلوقتي: ' + picked_case_id + '. لو بتدخل بكود، القضية هي قضية الأوضة.')
+            if team_mode:
+                team_count = st.number_input('عدد الفرق (للي بيعمل الأوضة)', min_value=2, max_value=4, value=2, step=1)
+                team_size = st.number_input('عدد لاعبين كل فريق (للي بيعمل الأوضة)', min_value=1, max_value=5, value=2, step=1)
+                my_team = st.number_input('رقم فريقك (٠ = توزيع تلقائي)', min_value=0, max_value=4, value=0, step=1)
+            else:
+                max_players = st.number_input('أقصى عدد لاعبين (للي بيعمل الأوضة)', min_value=2, max_value=10, value=2 if not race_mode else 4, step=1)
+            room_code = st.text_input('كود الأوضة لو هتدخل عند صحابك', max_chars=10)
             create = st.form_submit_button('اعمل أوضة')
             join = st.form_submit_button('ادخل الأوضة')
         with st.form('room_resume'):
@@ -129,7 +143,11 @@ if room_mode:
             resume = st.form_submit_button('ارجع لأوضتك')
         try:
             if create or join:
-                room = room_call('create' if create else 'join', {'name':player_name,'mode':'race' if race_mode else 'coop'}, code=room_code)
+                if team_mode:
+                    args = {'name':player_name,'mode':'team','case':picked_case_id,'team_count':int(team_count),'team_size':int(team_size),'team':int(my_team)}
+                else:
+                    args = {'name':player_name,'mode':MODE_KEYS[mode],'case':picked_case_id,'max_players':int(max_players)}
+                room = room_call('create' if create else 'join', args, code=room_code)
                 st.session_state.room_token = room['token']
                 st.session_state.room_fresh = True
                 st.rerun()
@@ -148,10 +166,21 @@ if room_mode:
             st.session_state.pop('room_token',None); st.rerun()
         st.stop()
     race_mode = room.get('mode','coop') == 'race'
+    team_mode = room.get('mode','coop') == 'team'
+    competitive = race_mode or team_mode
     state = room['state']
     st.session_state.investigation = state
-    st.info('كود الأوضة: ' + room['code'] + ' | الموجودين: ' + '، '.join(p['name'] for p in room['players']))
-    st.caption('الكود دعوة لصاحبك. اللي معاه الكود يقدر يدخل لو فيه مكان. الاسم مش إثبات هوية.')
+    case = generate_case(room['case_id'])
+    st.session_state.case = case
+    names = {p['id']:p['name'] for p in room['players']}
+    st.info('كود الأوضة: ' + room['code'] + ' | القضية: ' + case['public']['title'])
+    if team_mode:
+        for i in range(1, room['team_count']+1):
+            mine = ' (فريقك)' if room['my_unit']=='t'+str(i) else ''
+            st.write('**' + team_label('t'+str(i)) + mine + ':** ' + ('، '.join(p['name'] for p in room['players'] if p['unit']=='t'+str(i)) or 'فاضي') + ' ('+str(sum(1 for p in room['players'] if p['unit']=='t'+str(i)))+'/'+str(room['team_size'])+')')
+    else:
+        st.write('**الموجودين (' + str(len(room['players'])) + '/' + str(room['max_players']) + '):** ' + '، '.join(p['name'] for p in room['players']))
+    st.caption('الكود دعوة لصحابك. اللي معاه الكود يقدر يدخل لو فيه مكان. الاسم مش إثبات هوية.')
     with st.expander('احفظ مفتاح رجوعك قبل ما تقفل'):
         st.warning('ده مفتاحك إنت بس، ما تبعتوش لصاحبك ولا تكتبه في الشات. اللي معاه يقدر يدخل باسمك ويشوف نوتتك. ارجع بنفس المفتاح لو الجلسة قفلت. مفيش استرجاع بالاسم بس.')
         st.download_button('نزّل مفتاح الرجوع', st.session_state.room_token, file_name='balagh-recovery.txt', mime='text/plain')
@@ -171,26 +200,35 @@ if room_mode:
         for k in [k for k in st.session_state if k.startswith('room_notes_')] + ['room_token','ai_suspect']:
             st.session_state.pop(k,None)
         st.rerun()
-    if race_mode:
-        if len(room['players']) < 2:
-            st.info('مستني صاحبك يدخل. التحقيق هيفتح للاتنين بعد دخوله.')
+    if competitive:
+        if not room['started']:
+            if room['me'] == room['host']:
+                st.info('إنت صاحب الأوضة. ابدأ لما كل صحابك يدخلوا. بعد البداية محدش جديد بيدخل.')
+                if st.button('ابدأ السباق', type='primary'):
+                    try:
+                        room_call('start'); st.rerun()
+                    except RoomError as e:
+                        st.warning(str(e))
+            else:
+                st.info('مستنيين صاحب الأوضة يبدأ. التحقيق هيفتح للكل مع بعض.')
             st.stop()
         if room['status'] == 'finished':
-            winner = next((p['name'] for p in room['players'] if p['id']==room['winner']), None)
-            if room['winner'] == room['me']:
-                st.success('كسبت السباق، حلك والأدلة صح وقرارك اتسجل الأول.')
-            elif winner:
-                st.info(winner + ' سبقك ووصل للحل الصح بالأدلة. السباق خلص.')
+            wu = room['winner_unit']
+            if wu and wu == room['my_unit']:
+                st.success(('فريقكم كسب السباق' if team_mode else 'كسبت السباق') + '، الحل والأدلة صح وقرار الفوز اتسجل الأول.')
+            elif wu:
+                winners = '، '.join(p['name'] for p in room['players'] if p['unit']==wu)
+                st.info((team_label(wu) + ' (' + winners + ')' if team_mode else winners) + ' سبقكم ووصل للحل الصح بالأدلة. السباق خلص.')
             else:
-                st.warning('السباق خلص من غير فايز، الاتنين قدموا اتهام غلط.')
+                st.warning('السباق خلص من غير فايز، كل اتهام كان ناقص أو غلط.')
             if st.button('سيب السباق وابدأ واحد جديد'):
                 st.session_state.clear(); st.rerun()
             st.stop()
         if state['finished']:
-            st.warning('اتهامك النهائي ماطلعش حل صحيح مكتمل بالأدلة. خرجت من السباق، وصاحبك لسه بيكمّل. النتيجة هتظهر هنا لما يخلص.')
+            st.warning(('اتهام فريقكم' if team_mode else 'اتهامك') + ' النهائي ماطلعش حل صحيح مكتمل بالأدلة. خرجتوا من السباق والباقيين لسه بيكمّلوا. النتيجة هتظهر هنا لما يخلصوا.' if team_mode else 'اتهامك النهائي ماطلعش حل صحيح مكتمل بالأدلة. خرجت من السباق والباقيين لسه بيكمّلوا. النتيجة هتظهر هنا لما يخلصوا.')
+            done = sum(1 for v in room['unit_done'].values() if v)
+            st.caption('خلصوا اتهامهم: ' + str(done) + ' من ' + str(len(room['unit_done']) or len(room['players'])))
             st.stop()
-    case = generate_case()
-    st.session_state.case = case
 else:
     if "case" not in st.session_state:
         st.session_state.case = None
@@ -206,7 +244,7 @@ else:
 def persist_room(op, payload=None):
     if room_mode:
         try:
-            args = dict(payload or {}, revision=room['revision'])
+            args = dict(payload or {}, revision=room['urev'])
             room_call(op, args)
         except RoomError as e:
             st.warning(str(e)); st.stop()
@@ -257,6 +295,7 @@ if isinstance(scene_event, dict) and scene_event.get('nonce') != st.session_stat
             inspect_evidence(case,state,eid)
         st.rerun()
 
+solo_unit = room_mode and room["unit_size"]==1
 if state["finished"]:
     result = state["result"]
     st.subheader('محضر قفل القضية')
@@ -363,10 +402,16 @@ if not state["finished"]:
             st.rerun()
         else:
             state["hints_used"] += 1
+            st.rerun()
     if state["hints_used"]:
         st.info(case.get('hints',['خلي بالك، وقت دخول اللي عملها مش لازم يبقى هو وقت الموت. راجع الزيارة والكوباية والسبب. البصمة لوحدها أو الخناقة لوحدها مش كفاية.'])[min(state['hints_used']-1,len(case.get('hints',[0]))-1)])
     st.subheader("⚖️ مين المتهم وإيه دليلك؟")
-    st.caption("اتهام نهائي واحد، لو المتهم أو الأدلة غلط هتخرج من السباق. الفوز محتاج ربط الزيارة بالكوباية والدافع." if race_mode else "اقتراحك لازم صاحبك يوافق عليه عشان التحقيق يقفل." if room_mode else "قبل ما تثبّت الاتهام، راجع نفسك: مين عملها؟ وإيه اللي يثبت كلامك؟ اختار الأدلة اللي بتربط زيارته باللي حصل وسببه. الشك لوحده مش كفاية. ليك قرار أخير واحد في المحاولة.")
+    if competitive:
+        st.caption("اتهام نهائي واحد" + (" للفريق، لازم كل أعضائه يوافقوا." if room_mode and not solo_unit else " لكل لاعب.") + " لو المتهم أو الأدلة غلط بتخرجوا من السباق. الفوز محتاج الأدلة المطلوبة مش الاسم بس.")
+    elif room_mode:
+        st.caption("اقتراحك لازم كل اللي في الأوضة يوافقوا عليه عشان التحقيق يقفل.")
+    else:
+        st.caption("قبل ما تثبّت الاتهام، راجع نفسك: مين عملها؟ وإيه اللي يثبت كلامك؟ اختار الأدلة اللي بتربط الخيوط ببعض. الشك لوحده مش كفاية. ليك قرار أخير واحد في المحاولة.")
     cards = {e["id"]: e for e in evidence_cards(case)}
     with st.form("accusation"):
         selected = st.selectbox("مين اللي عملها؟", [s["name"] for s in case["characters"]], index=None, placeholder="اختار حد",key="final_suspect_"+scene_scope)
@@ -380,7 +425,7 @@ if not state["finished"]:
             if room_mode:
                 try:
                     proposal = {'suspect':selected,'evidence':sorted(evidence_ids)}
-                    room_call('accuse' if race_mode else 'propose', proposal)
+                    room_call('accuse' if solo_unit else 'propose', proposal)
                     st.rerun()
                 except RoomError as e:
                     st.warning(str(e))
@@ -388,12 +433,13 @@ if not state["finished"]:
                 finish_investigation(case, state, selected, evidence_ids)
                 st.rerun()
 
-if room_mode and not race_mode and room['proposal'] and not state['finished']:
+if room_mode and not solo_unit and room['proposal'] and not state['finished']:
     proposal = room['proposal']
     st.subheader('راجع اقتراح الاتهام')
     st.write('المتهم: ' + proposal['suspect'] + ' | الأدلة: ' + '، '.join(proposal['evidence']))
+    st.caption('موافقات: ' + str(len(room['approvals'])) + ' من ' + str(room['unit_size']))
     if room['me'] in room['approvals']:
-        st.info('موافقتك متسجلة، مستني صاحبك. أي دليل أو استجواب جديد بيلغي الاقتراح عشان تراجعوه تاني.')
+        st.info('موافقتك متسجلة، مستني الباقيين. أي دليل أو استجواب جديد بيلغي الاقتراح عشان تراجعوه تاني.')
     elif st.button('موافق على نفس الاتهام والأدلة، نقفل التحقيق'):
         try:
             room_call('approve', {'proposal':proposal})

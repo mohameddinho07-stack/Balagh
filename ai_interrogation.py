@@ -61,15 +61,23 @@ def request_topic(payload, api_key):
 
 
 
+# Data, not code: later confrontations do not restore an earlier denial.
+# New cases add rules here (or in their case data) and inherit them in every mode.
+CONTINUITY = [
+ dict(case='001', suspect='nadine', topic='n1', after=['n2'],
+      answer='أنا قلت عشرة بالليل في الأول، بس خلاص قلتلك إني رجعت زيارة وقدّمت له الكوباية. مش هارجع أنكر الزيارة تاني.'),
+ dict(case='002', suspect='bassem', topic='s204', after=['s206','s207'],
+      answer='أنا قلت حكاية الفانوس في الأول. بعد الصورة قلتلك إني دخلت مع دينهو، ومش هارجع أقول إني كنت عند الفانوس.'),
+ dict(case='003', suspect='dalia', topic='b304', after=['b306','b307'],
+      answer='أنا قلت غرفة الماكينات في الأول. بعد المواجهة قلتلك إني كنت عند لوحة الخدمة، ومش هارجع أنكر مكاني اللي في المحضر.'),
+]
+
+
 def consistent_answer(case,state,suspect_id,topic,answer):
-    """Later confrontations do not silently restore an earlier denial."""
     answered={x['question_id'] for x in state['interviews']}
-    if case['id']=='001' and suspect_id=='nadine' and topic=='n1' and 'n2' in answered:
-        return 'أنا قلت عشرة بالليل في الأول، بس خلاص قلتلك إني رجعت زيارة وقدّمت له الكوباية. مش هارجع أنكر الزيارة تاني.'
-    if case['id']=='002' and suspect_id=='bassem' and topic=='s204' and answered & {'s206','s207'}:
-        return 'أنا قلت حكاية الفانوس في الأول. بعد الصورة قلتلك إني دخلت مع دينهو، ومش هارجع أقول إني كنت عند الفانوس.'
-    if case['id']=='003' and suspect_id=='dalia' and topic=='b304' and answered & {'b306','b307'}:
-        return 'أنا قلت غرفة الماكينات في الأول. بعد المواجهة قلتلك إني كنت عند لوحة الخدمة، ومش هارجع أنكر مكاني اللي في المحضر.'
+    for rule in CONTINUITY + list(case.get('continuity', [])):
+        if rule.get('case', case['id'])==case['id'] and rule['suspect']==suspect_id and rule['topic']==topic and answered & set(rule['after']):
+            return rule['answer']
     return answer
 
 def ask_suspect(case, state, suspect_id, question, api_key, selector=request_topic, now=None):
