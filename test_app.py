@@ -178,3 +178,27 @@ class PilotTests(unittest.TestCase):
         import pilot
         self.assertEqual(pilot.confront_only('002'),{'s205','s206','s207'})
         self.assertEqual(pilot.confront_only('001'),set())
+
+
+class NextStepTests(unittest.TestCase):
+    def test_guide_walks_every_case_and_never_quotes_the_solution(self):
+        import game_engine as g, pilot
+        for cid in ['001', '002', '003']:
+            c = g.generate_case(cid); st = g.new_investigation()
+            seen = []
+            for _ in range(60):
+                h, d, n = pilot.next_step(c, st, g.evidence_cards, g.available_evidence, g.available_questions)
+                self.assertNotIn(c['truth']['explanation'][:30], h + d)
+                seen.append(h)
+                if h.startswith('افحص'):
+                    ev = [e for e in g.available_evidence(c, st) if e['id'] not in st['discovered']]
+                    g.inspect_evidence(c, st, ev[0]['id']); continue
+                hit = False
+                for ch in c['characters']:
+                    for q in g.available_questions(ch, st['discovered']):
+                        if q['id'] not in {x['question_id'] for x in st['interviews']} and q['id'] not in pilot.confront_only(cid):
+                            g.record_answer(c, st, ch['id'], q['id']); hit = True; break
+                    if hit: break
+                if not hit: break
+            self.assertTrue(seen[0].startswith('افحص'))
+            self.assertEqual(len(st['discovered']), len(g.evidence_cards(c)))
