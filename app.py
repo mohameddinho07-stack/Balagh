@@ -33,7 +33,7 @@ if phase == 'landing':
     st.stop()
 def archive_solo():
     current=st.session_state.get('case')
-    if current and not st.session_state.get('room_token'):
+    if current and not st.session_state.get('room_token') and st.session_state.get('previous_mode','🔍 العب لوحدك')=='🔍 العب لوحدك':
         st.session_state.setdefault('case_saves',{})[current['id']] = {
             'case':current,'state':st.session_state.get('investigation'),
             'notes':st.session_state.get('detective_notes','')}
