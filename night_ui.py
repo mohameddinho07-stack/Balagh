@@ -86,21 +86,21 @@ def _card(c):
 def _entry():
     st.title('قاتل وظابط مباحث')
     st.caption('لعبة قعدة لـ 4 لحد 7 صحاب في نفس المكان. الأدوار بتتوزع لوحدها وسري. كل واحد بيشوف شاشته بس.')
-    name = st.text_input('اسمك', max_chars=30, key='night_name')
-    c1, c2 = st.columns(2)
-    if c1.button('اعمل أوضة', type='primary', key='night_create'):
-        try:
+    with st.form('night_entry'):
+        name = st.text_input('اسمك', max_chars=30, key='night_name')
+        code = st.text_input('كود الأوضة (لو داخل عند صحابك)', key='night_codein')
+        c1, c2 = st.columns(2)
+        create = c1.form_submit_button('اعمل أوضة', type='primary')
+        join = c2.form_submit_button('ادخل الأوضة')
+    try:
+        if create:
             st.session_state['night_code'], st.session_state['night_token'] = _new_room(name)
             st.rerun()
-        except GameError as e:
-            st.warning(str(e))
-    code = st.text_input('كود الأوضة (لو داخل عند صحابك)', key='night_codein')
-    if c2.button('ادخل الأوضة', key='night_joinbtn'):
-        try:
+        elif join:
             st.session_state['night_code'], st.session_state['night_token'] = _join(code, name)
             st.rerun()
-        except GameError as e:
-            st.warning(str(e))
+    except GameError as e:
+        st.warning(str(e))
 
 
 @st.fragment(run_every=4)
