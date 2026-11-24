@@ -94,6 +94,16 @@ class AppFlowTests(unittest.TestCase):
             self.assertEqual(a.session_state['detective_notes'],'solo note')
             self.assertFalse(a.exception)
 
+    def test_new_attempt_has_no_stale_final_confirmation(self):
+        a=started();a.session_state['investigation']['discovered']=['E03'];a.run()
+        next(x for x in a.selectbox if x.label=='مين اللي عملها؟').select('يوسف بيومي')
+        a.multiselect[0].select('E03');a.checkbox[0].check()
+        a.button(key='FormSubmitter:accusation-ثبّت الاتهام').click().run()
+        next(b for b in a.button if b.label=='نجرّب من الأول').click().run()
+        self.assertIsNone(next(x for x in a.selectbox if x.label=='مين اللي عملها؟').value)
+        self.assertFalse(next(x for x in a.checkbox if x.label.startswith('أيوه، ده')).value)
+        self.assertEqual(a.multiselect[0].value,[])
+
     def test_ai_has_equal_choices_and_no_default(self):
         from unittest.mock import patch
         from ai_interrogation import ask_suspect as real_ask
