@@ -12,6 +12,13 @@ from night import Game, GameError, PLACES, ROLE_KILLER
 from night_store import DurableStore
 
 
+_CSS = """<style>
+[data-baseweb="select"] span[data-baseweb="tag"]{background:#e7d5ae!important;color:#101b19!important;border:1px solid #e7d5ae!important;}
+[data-baseweb="select"] span[data-baseweb="tag"] *{color:#101b19!important;fill:#101b19!important;background:transparent!important;}
+[data-baseweb="select"] input{background:transparent!important;color:#eee5cf!important;}
+[data-baseweb="select"]>div{border:1px solid #6c8067!important;}
+</style>"""
+
 def _store():
     try:
         return DurableStore(st.secrets['SUPABASE_URL'], st.secrets['SUPABASE_KEY'], st.secrets['NIGHT_MASTER_SECRET'])
@@ -191,7 +198,7 @@ def _room():
         if v['statements']:
             st.markdown('**كل واحد قال كان فين (٩ / ١٠ / ١١):**')
             for n, route in v['statements'].items():
-                st.write('• %s: %s' % (n, ' ← '.join(route)))
+                st.write('• %s — %s' % (n, ' | '.join('الساعة %s: %s' % (h, pl) for h, pl in zip(['٩', '١٠', '١١'], route))))
             st.caption('واحد بس كدب في ساعة واحدة. الكروت هي اللي بتكشف مين.')
         st.markdown('**كروتك (سرية لحد ما تحطها):**')
         shown = {c['id'] for c in v['board']}
@@ -235,6 +242,7 @@ def _room():
 
 
 def run():
+    st.markdown(_CSS, unsafe_allow_html=True)
     if st.session_state.get('night_code') and st.session_state.get('night_token'):
         _room()
     else:
