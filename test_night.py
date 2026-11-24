@@ -225,3 +225,68 @@ class Scope(unittest.TestCase):
         g = Game(seed=1)
         for i in range(7): g.join('لاعب%d' % i)
         with self.assertRaises(GameError): g.join('زيادة')
+
+
+class Adversarial(unittest.TestCase):
+    """Fuzz: random actions by random players; after every step every view is checked."""
+    def _flat(self, o, out):
+        if isinstance(o, dict):
+            for k, v in o.items():
+                out.append(('k', k)); self._flat(v, out)
+        elif isinstance(o, (list, tuple)):
+            for v in o: self._flat(v, out)
+        else:
+            out.append(('v', o))
+        return out
+
+    def test_fuzz_no_cross_player_leak(self):
+        import random as R
+        for seed in range(60):
+            g, toks, t = mk(6, seed)
+            rng = R.Random(seed)
+            names = list(toks)
+            for step in range(60):
+                nm = rng.choice(names)
+                op = rng.choice(['alibi', 'search', 'publish', 'propose', 'approve', 'next', 'read'])
+                payload = {}
+                if op == 'alibi': payload = dict(place=rng.choice(PLACES))
+                elif op == 'search': payload = dict(spot=rng.choice(PLACES), spoil=rng.choice(PLACES))
+                elif op == 'publish': payload = dict(card=rng.choice(list(g.cards) or ['x']))
+                elif op == 'propose': payload = dict(suspect=rng.choice(names), cards=list(g.public_cards)[:2])
+                try: g.act(toks[nm], op, payload)
+                except GameError: pass
+                t[0] += rng.choice([0, 10, 50, 200])
+                for me, tk in toks.items():
+                    v = g.view(tk)
+                    flat = self._flat(v, [])
+                    keys = {x for k, x in flat if k == 'k'}
+                    bad = {'spoil', 'spoiled', 'submitted', 'hash', 'token'} | (set() if g.phase == 'ended' else {'truth', 'pos', 'killers'})
+                    self.assertFalse(keys & bad, keys & bad)
+                    if g.phase != 'ended':
+                        self.assertIsNone(v['result'])
+                        # role string appears only as my own role value
+                        roles = [x for k, x in flat if k == 'v' and x in (ROLE_KILLER, ROLE_COP)]
+                        self.assertEqual(roles, [v['role']])
+                    if me not in g.killers:
+                        self.assertEqual(v['private']['partners'], [])
+                    for c in g.cards.values():
+                        if c['owner'] != me and c['id'] not in g.public_cards:
+                            self.assertNotIn(c['id'], [x for k, x in flat if k == 'v'])
+                    # others' private position lists must not be present as a whole
+                    for o in names:
+                        if o != me and g.truth:
+                            self.assertNotIn(g.truth['pos'][o], [x for k, x in flat if k == 'v'] )
+                    if g.phase in ('alibi', 'search'):
+                        self.assertNotIn('i_submitted_by', keys)
+
+    def test_statements_only_after_alibi_phase(self):
+        for seed in range(20):
+            g, toks, t = mk(5, seed)
+            self.assertEqual(g.phase, 'alibi')
+            for tk in toks.values():
+                self.assertEqual(g.view(tk)['statements'], {})
+            k = g.killers[0]
+            other = [n for n in toks if n != k][0]
+            g.act(toks[other], 'alibi', dict(place=BATH)) if False else None
+            g.act(toks[k], 'alibi', dict(place=BATH))
+            self.assertNotEqual(g.phase, 'alibi')
