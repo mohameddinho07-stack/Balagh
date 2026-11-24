@@ -206,6 +206,7 @@ class BoardUI(unittest.TestCase):
         inv['interviews'].append({'suspect': 'نادين مراد', 'question_id': 'n1',
                                   'question': 'مشيتي من الفندق إمتى؟',
                                   'answer': 'الساعة 22:00 بالظبط. كلمته قبلها في موضوع شغل، وبعد كده ما شفتوش.'})
+        a.session_state['stage'] = 'wall'
         a.run()
         self.assertFalse(a.exception)
         self.assertTrue(any('ملف القضية' in s.value for s in a.subheader))
@@ -278,6 +279,7 @@ class BoardUI(unittest.TestCase):
         with patch('room_client.rpc', side_effect=fake_rpc):
             a.radio(key='mode_choice').set_value('🤝 تعاون').run()
             a.session_state['room_token'] = 'x'
+            a.session_state['stage'] = 'wall'
             a.run()
             self.assertFalse(a.exception)
             self.assertTrue(any('ملف القضية' in s.value for s in a.subheader))
