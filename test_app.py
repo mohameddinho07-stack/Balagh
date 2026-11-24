@@ -1,8 +1,16 @@
 import unittest
 from streamlit.testing.v1 import AppTest
 
+def skip_intro(a):
+    for b in a.button:
+        if b.label=='تخطّى':
+            b.click().run();break
+    return a
+
+
 def started():
- a=AppTest.from_file('app.py');a.session_state['entry_phase']='game';a.run();next(x for x in a.button if x.label=='🚔 يلا نحقق').click().run();return a
+ a=AppTest.from_file('app.py');a.session_state['entry_phase']='game';a.run();next(x for x in a.button if x.label=='🚔 يلا نحقق').click().run()
+ a=skip_intro(a);return a
 
 
 class AppFlowTests(unittest.TestCase):
@@ -110,7 +118,7 @@ class AppFlowTests(unittest.TestCase):
         a = AppTest.from_file('app.py')
         a.secrets['GROQ_API_KEY'] = 'test'
         a.session_state['entry_phase'] = 'game'
-        a.run(); next(x for x in a.button if x.label=='🚔 يلا نحقق').click().run()
+        a.run(); next(x for x in a.button if x.label=='🚔 يلا نحقق').click().run(); skip_intro(a)
         selector = a.selectbox(key='ai_suspect')
         assert selector.value is None
         assert selector.options == ['آسر منصور','ليلى الديب','يوسف بيومي','نادين مراد']
@@ -127,3 +135,41 @@ class AppFlowTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class PilotTests(unittest.TestCase):
+    def test_intro_is_short_skippable_and_has_no_scene_until_done(self):
+        a=AppTest.from_file('app.py');a.session_state['entry_phase']='game';a.run()
+        next(x for x in a.button if x.label=='🚔 يلا نحقق').click().run()
+        self.assertTrue(any(b.label=='تخطّى' for b in a.button))
+        self.assertTrue(any(b.label=='كمّل' for b in a.button))
+        next(b for b in a.button if b.label=='كمّل').click().run()
+        next(b for b in a.button if b.label=='كمّل').click().run()
+        self.assertTrue(any(b.label=='ابدأ التحقيق' for b in a.button))
+        next(b for b in a.button if b.label=='ابدأ التحقيق').click().run()
+        self.assertFalse(any(b.label=='تخطّى' for b in a.button))
+        self.assertFalse(a.exception)
+
+    def test_confrontation_rule_is_server_data_not_a_shortcut(self):
+        import pilot, game_engine as g, cases_extra as c
+        case=c.CASE_002;st=g.new_investigation()
+        self.assertEqual(pilot.resolve_confront(case,st,'bassem','s204','E05')[0],'error')
+        for e in ('E01','E05'):g.inspect_evidence(case,st,e)
+        g.record_answer(case,st,'bassem','s204')
+        self.assertEqual(pilot.resolve_confront(case,st,'bassem','s204','E01')[0],'wrong')
+        kind,q=pilot.resolve_confront(case,st,'bassem','s204','E05')
+        self.assertEqual((kind,q['id']),('unlock','s205'))
+        g.record_answer(case,st,'bassem','s205')
+        self.assertEqual(pilot.resolve_confront(case,st,'bassem','s204','E05')[0],'done')
+        # Missing prerequisite evidence cannot be bypassed by the pairing.
+        st2=g.new_investigation();g.inspect_evidence(case,st2,'E01');g.inspect_evidence(case,st2,'E02');g.inspect_evidence(case,st2,'E03')
+        g.record_answer(case,st2,'bassem','s204')
+        for e in ('E06',):g.inspect_evidence(case,st2,e)
+        st2['interviews'].append(dict(suspect='باسم',question_id='s205',question='',answer=''))
+        self.assertEqual(pilot.resolve_confront(case,st2,'bassem','s205','E06')[0],'unlock')
+
+    def test_every_case_has_intro_and_mood(self):
+        import pilot
+        for cid in ('001','002','003'):
+            self.assertTrue(2<=len(pilot.intro_beats(cid))<=4)
+            self.assertTrue(pilot.mood(cid))
