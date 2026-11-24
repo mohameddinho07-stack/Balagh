@@ -15,7 +15,7 @@ class GameError(Exception):
     pass
 
 DEFAULTS = dict(p_murder_slot=0.34, chances=2, min_witnesses=2, need_contradictions=2,
-                search_secs=45, talk_secs=180, killers_from=99, max_players=7, scene_forbidden=True)  # first playable: 4-7 players, one killer
+                search_secs=45, talk_secs=180, killers_from=99, max_players=7, scene_forbidden=True, p_mask=0.35)  # first playable: 4-7 players, one killer
 
 def n_killers(n, cfg):
     return 2 if n >= cfg['killers_from'] else 1
@@ -71,6 +71,8 @@ class Game:
         self.deadline = None
         self.log = []            # public log lines
         self.proposed = {}
+        self.forge_used = False   # the killers get ONE forged clue per night
+        self.refuted = []         # ids of forged cards that players proved fake
 
     # ----- helpers -----
     def _bump(self):
@@ -126,7 +128,7 @@ class Game:
         self.round = 0
         self.submitted = {}
         self.deadline = self.clock() + self.cfg['search_secs']
-        self._pub('النور قطع الساعة %s في %s، وعم فتحي اتلقى ميت.' % (SLOTS[self.truth['m']], self.truth['scene']))
+        self._pub('النور قطع في %s، وعم فتحي اتلقى ميت. محدش عارف حصل الساعة كام بالظبط: بين ٩ و١١.' % self.truth['scene'])
         self._bump()
 
     def act(self, token, op, payload=None):
@@ -147,6 +149,8 @@ class Game:
             self._propose(p, payload)
         elif op == 'approve':
             self._approve(p, payload)
+        elif op == 'challenge':
+            self._challenge(p, payload)
         elif op == 'next':
             if not p['host']:
                 raise GameError('صاحب الأوضة بس')
@@ -212,6 +216,12 @@ class Game:
         if sus not in names or not isinstance(ids, list) or len(ids) != 2 or len(set(ids)) != 2 \
            or any(i not in self.public_cards for i in ids):
             raise GameError('اختار متهم وكارتين على الترابيزة')
+        if any(self.cards[i]['kind'] == 'link' for i in ids):
+            raise GameError('اختار متهم وكارتين على الترابيزة')
+        if any(i in self.refuted for i in ids):
+            raise GameError('الكارت ده اتكشف إنه مزوّر')
+        if any(not self._slot_known(self.cards[i]) for i in ids):
+            raise GameError('ساعة كارت من دول لسه مش معروفة. حطوا كارت الربط على الترابيزة الأول.')
         if sus == p['name']:
             raise GameError('مينفعش تتهم نفسك')
         key = (p['name'], self.round)
@@ -244,9 +254,8 @@ class Game:
         sus = pr['suspect']
         self.proposal = None
         is_k = sus in self.killers
-        m = self.truth['m']
-        stmt = self.statements[sus]
-        hits = [c for c in pr['cards'] if contradicts(self.cards[c], sus, stmt, m)]
+        hits = [c for c in pr['cards']
+                if contradicts(self.cards[c], sus, self.statements[sus][self.cards[c]['slot']], self.cards[c]['slot'])]
         ok = is_k and len(hits) >= self.cfg['need_contradictions'] and sus not in self.caught
         if ok:
             self.caught.append(sus)
@@ -271,43 +280,79 @@ class Game:
                                       pos=self.truth['pos']))
         self._pub('خلصت الليلة: %s كسب.' % winner)
 
-    def _make_card(self, owner, kind, spot, spoiled=False):
-        t = self.truth
-        m = t['m']
-        slot = m if self.rng.random() < self.cfg['p_murder_slot'] else self.rng.choice([i for i in range(3) if i != m])
-        if kind == 'testimony':
-            place = t['pos'][owner][slot]
-        else:
-            place = spot
-        seen = seen_at(t, owner if kind == 'testimony' else None, slot, place)
-        if spoiled and slot == m:
-            # misleading: put one innocent (not a killer, not already listed) at the scene... or claim a witness is absent
-            pool = [n for n in t['pos'] if n not in self.killers and n not in seen and place == t['scene']]
-            if pool:
-                seen = sorted(seen + [self.rng.choice(pool)])
-            elif place != t['scene']:
-                pass
-        elif spoiled:
-            slot = m
-            place = t['scene'] if spot == t['scene'] else spot
-            pool = [n for n in t['pos'] if n not in self.killers and t['pos'][n][m] != place]
-            seen = [self.rng.choice(pool)] if pool and place != BATH else []
+    def _slot_pick(self):
+        m = self.truth['m']
+        return m if self.rng.random() < self.cfg['p_murder_slot'] else self.rng.choice([i for i in range(3) if i != m])
+
+    def _new_card(self, owner, kind, slot, place, seen, spoiled=False, masked=False):
         cid = secrets.token_hex(3)
-        self.cards[cid] = dict(id=cid, owner=owner, kind=kind, slot=slot, place=place, seen=seen,
-                               round=self.round, spoiled=spoiled)
-        return cid
+        while cid in self.cards:
+            cid = secrets.token_hex(3)
+        self.cards[cid] = dict(id=cid, owner=owner, kind=kind, slot=slot, place=place, seen=list(seen),
+                               round=self.round, spoiled=spoiled, masked=masked)
+        return self.cards[cid]
+
+    def _testimony(self, owner, slot=None, masked=None):
+        t = self.truth
+        slot = self._slot_pick() if slot is None else slot
+        place = t['pos'][owner][slot]
+        mk = (self.rng.random() < self.cfg['p_mask']) if masked is None else masked
+        return self._new_card(owner, 'testimony', slot, place, seen_at(t, owner, slot, place), masked=mk)
+
+    def _slot_known(self, c, visited=None):
+        """A card's hour is usable when it is not hidden, or a link card on the table ties it to a card with a known hour."""
+        if c['kind'] == 'link' or not c.get('masked'):
+            return True
+        visited = (visited or set()) | {c['id']}
+        for lid in self.public_cards:
+            L = self.cards[lid]
+            if L['kind'] != 'link' or c['id'] not in (L['a'], L['b']):
+                continue
+            other = L['b'] if L['a'] == c['id'] else L['a']
+            if other in visited or other not in self.public_cards:
+                continue
+            if self._slot_known(self.cards[other], visited):
+                return True
+        return False
+
+    def _conflict(self, a, b):
+        """True when card b (someone's own testimony) says the opposite of what card a says about the same hour."""
+        if a['kind'] == 'link' or b['kind'] != 'testimony' or a['slot'] != b['slot']:
+            return False
+        return b['owner'] in a['seen'] and b['place'] != a['place']
+
+    def _challenge(self, p, payload):
+        if self.phase != 'talk':
+            raise GameError('الاعتراض وقت الكلام بس')
+        ids = payload.get('cards')
+        if not isinstance(ids, list) or len(ids) != 2 or len(set(ids)) != 2 \
+           or any(i not in self.public_cards for i in ids):
+            raise GameError('اختار كارتين من الترابيزة')
+        a, b = self.cards[ids[0]], self.cards[ids[1]]
+        if a['kind'] == 'link' or b['kind'] == 'link' or not (self._slot_known(a) and self._slot_known(b)):
+            raise GameError('مفيش تناقض واضح بين الكارتين دول')
+        for x, y in ((a, b), (b, a)):
+            if self._conflict(x, y):
+                bad = x if x['spoiled'] else (y if y['spoiled'] else None)
+                if bad is not None and bad['id'] not in self.refuted:
+                    self.refuted.append(bad['id'])
+                    self._pub('كارت %s اتكشف إنه مزوّر. ما ينفعش يتستخدم في اتهام.' % bad['id'])
+                    self._bump()
+                    return
+                if bad is not None:
+                    raise GameError('الكارت ده اتكشف قبل كده')
+        raise GameError('مفيش تناقض واضح بين الكارتين دول')
 
     def _advance(self, forced=False):
         t = self.truth
         if self.phase == 'alibi':
             for q in self.players:
                 n = q['name']
+                route = list(t['pos'][n])
                 if q['role'] == ROLE_KILLER:
-                    place = self.submitted.get(n, {}).get('place') or self.rng.choice([x for x in PLACES if x != t['scene']])
-                else:
-                    place = t['pos'][n][t['m']]
-                self.statements[n] = place
-            self._pub('كل واحد قال كان فين وقت القتل. شوفوا مين كلامه مش راكب.')
+                    route[t['m']] = self.submitted.get(n, {}).get('place') or self.rng.choice([x for x in PLACES if x != t['scene']])
+                self.statements[n] = route
+            self._pub('كل واحد قال كان فين الساعة ٩ و١٠ و١١. واحد بس كدب في ساعة من التلاتة.')
             self.round = 1
             self._start_search()
         elif self.phase == 'search':
@@ -331,32 +376,84 @@ class Game:
         self.spoiled = None
 
     def _resolve_search(self):
+        t = self.truth
+        m = t['m']
+        names = [q['name'] for q in self.players]
         spoil = None
         for k in self.killers:
-            s = self.submitted.get(k, {}).get('spoil')
-            if s:
-                spoil = s   # one spoil per round; if two killers choose, last one counts (knob)
+            sp = self.submitted.get(k, {}).get('spoil')
+            if sp:
+                spoil = sp
+        new = []
         for q in self.players:
             n = q['name']
-            # testimony card: one per player per round
-            self._make_card(n, 'testimony', None)
+            new.append(self._testimony(n))
             spot = self.submitted.get(n, {}).get('spot') or self.rng.choice(PLACES)
-            self._make_card(n, 'clue', spot, spoiled=(spot == spoil and q['role'] != ROLE_KILLER))
+            slot = self._slot_pick()
+            seen = seen_at(t, None, slot, spot)
+            c = self._new_card(n, 'clue', slot, spot, seen, masked=self.rng.random() < self.cfg['p_mask'])
+            new.append(c)
+            if not self.forge_used and spoil and spot == spoil and q['role'] != ROLE_KILLER and spot != BATH:
+                seen_m = seen_at(t, None, m, spot)
+                pool = [x for x in names if x not in self.killers and t['pos'][x][m] != spot and x not in seen_m]
+                if pool:
+                    victim = self.rng.choice(pool)
+                    c.update(slot=m, seen=sorted(seen_m + [victim]), spoiled=True, masked=False)
+                    self.forge_used = True
+                    new.append(self._testimony(victim, slot=m, masked=False))   # the truth that disproves the forgery
+        # link cards: tie each hidden-hour card to a card whose hour is plain
+        for c in list(new):
+            if not c['masked']:
+                continue
+            plain = [x for x in self.cards.values() if x['kind'] != 'link' and not x['masked'] and x['slot'] == c['slot']]
+            if not plain:
+                c['masked'] = False
+                continue
+            d = self.rng.choice(plain)
+            owner = self.rng.choice([x for x in names if x != c['owner']])
+            L = self._new_card(owner, 'link', None, None, [], masked=False)
+            L['a'], L['b'] = c['id'], d['id']
+        if self.round >= ROUNDS:
+            self._guarantee_evidence()
         self.spoiled = None
 
+    def _guarantee_evidence(self):
+        """Fairness floor: by the last round the table can always catch the killer with plain true cards."""
+        t = self.truth
+        m = t['m']
+        need = self.cfg['need_contradictions']
+        wit = [n for n in t['pos'] if n not in self.killers and t['pos'][n][m] == t['scene']]
+        for k in self.killers:
+            claim = self.statements[k][m]
+            def hits():
+                return [c for c in self.cards.values() if c['kind'] != 'link' and not c['spoiled'] and not c['masked']
+                        and c['slot'] == m and contradicts(c, k, claim, m)]
+            have = {c['owner'] for c in hits()}
+            for w in sorted(wit, key=lambda w: w in have):
+                if len(hits()) >= need:
+                    break
+                self._testimony(w, slot=m, masked=False)
+
     # ----- projection -----
-    def _fmt(self, c):
-        return dict(id=c['id'], slot=SLOTS[c['slot']], place=c['place'], seen=list(c['seen']),
-                    kind=c['kind'], owner=c['owner'] if c['id'] in self.public_cards else None)
+    def _fmt(self, c, me=None):
+        pub = c['id'] in self.public_cards
+        owner = c['owner'] if pub else None
+        if c['kind'] == 'link':
+            return dict(id=c['id'], kind='link', slot=None, place=None, seen=[], owner=owner,
+                        a=c['a'] if pub or self.cards[c['a']]['owner'] == me else None,
+                        b=c['b'] if pub or self.cards[c['b']]['owner'] == me else None,
+                        masked=False, refuted=False)
+        known = self._slot_known(c)
+        return dict(id=c['id'], slot=SLOTS[c['slot']] if known else '؟', place=c['place'], seen=list(c['seen']),
+                    kind=c['kind'], owner=owner, masked=bool(c['masked']) and not known,
+                    refuted=c['id'] in self.refuted)
 
     def view(self, token):
         p = self._by_token(token)
         self._tick()
         me = p['name']
-        mine = [self._fmt(dict(c, owner=c['owner'])) for c in self.cards.values() if c['owner'] == me]
+        mine = [self._fmt(c, me) for c in self.cards.values() if c['owner'] == me]
         pub = [self._fmt(self.cards[i]) for i in self.public_cards]
-        for c in pub:
-            c['owner'] = self.cards[c['id']]['owner']
         v = dict(rev=self.rev, phase=self.phase, round=self.round, rounds=ROUNDS, chances=self.chances,
                  me=me, host=p['host'], players=[q['name'] for q in self.players],
                  killer_count=(n_killers(len(self.players), self.cfg) if self.phase != 'lobby' else None),
@@ -370,12 +467,14 @@ class Game:
                  seconds_left=(max(0, int(self.deadline - self.clock())) if self.deadline is not None else None),
                  result=None)
         if self.phase != 'lobby':
-            v['scene'] = self.truth['scene']; v['murder_slot'] = SLOTS[self.truth['m']]
+            v['scene'] = self.truth['scene']
+            v['murder_slot'] = SLOTS[self.truth['m']] if self.phase == 'ended' else None
             if p['role'] == ROLE_KILLER:
                 v['private'] = dict(my_places=list(self.truth['pos'][me]),
-                                    partners=[k for k in self.killers if k != me])
+                                    partners=[k for k in self.killers if k != me],
+                                    forge_left=0 if self.forge_used else 1, murder_slot=SLOTS[self.truth['m']])
             else:
-                v['private'] = dict(my_places=list(self.truth['pos'][me]), partners=[])
+                v['private'] = dict(my_places=list(self.truth['pos'][me]), partners=[], forge_left=0, murder_slot=None)
         if self.phase == 'ended':
             v['result'] = json.loads(json.dumps(self.result))
         return v

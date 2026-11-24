@@ -269,8 +269,9 @@ class Adversarial(unittest.TestCase):
                         self.assertEqual(roles, [v['role']])
                     if me not in g.killers:
                         self.assertEqual(v['private']['partners'], [])
+                    linked = {i for lid in g.public_cards if g.cards[lid]['kind'] == 'link' for i in (g.cards[lid]['a'], g.cards[lid]['b'])}
                     for c in g.cards.values():
-                        if c['owner'] != me and c['id'] not in g.public_cards:
+                        if c['owner'] != me and c['id'] not in g.public_cards and c['id'] not in linked:
                             self.assertNotIn(c['id'], [x for k, x in flat if k == 'v'])
                     # others' private position lists must not be present as a whole
                     for o in names:

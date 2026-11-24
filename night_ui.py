@@ -53,10 +53,16 @@ def _try(op, payload=None):
 
 
 def _card(c):
+    if c['kind'] == 'link':
+        if c.get('a') and c.get('b'):
+            return 'ربط · الكارت %s والكارت %s من نفس الساعة' % (c['a'], c['b'])
+        return 'ربط · كارت من كروتك مربوط بكارت تاني من نفس الساعة. لما تحطه هيظهر الاتنين.'
     who = (c['owner'] + ' · ') if c.get('owner') else ''
     seen = ('شاف: ' + '، '.join(c['seen'])) if c['seen'] else 'ما شافش حد'
     kind = 'شهادة' if c['kind'] == 'testimony' else 'أثر'
-    return '%s%s · الساعة %s · في %s · %s' % (who, kind, c['slot'], c['place'], seen)
+    hour = 'ساعة مخبية (محتاجة كارت ربط)' if c.get('masked') else 'الساعة ' + c['slot']
+    fake = '  ❌ اتكشف إنه مزوّر' if c.get('refuted') else ''
+    return '%s%s · %s · في %s · %s%s' % (who, kind, hour, c['place'], seen, fake)
 
 
 def _entry():
@@ -121,10 +127,17 @@ def _room():
     if ph != 'ended':
         st.markdown('### دورك: **' + role + '**')
         st.caption('ما تورّيش شاشتك لحد.' + ('' if role != ROLE_KILLER else ' إنت اللي عملتها. اتصرف كأنك بريء.'))
-    st.write('الجريمة: النور قطع الساعة ' + str(v['murder_slot']) + ' في ' + str(v['scene']) + '.')
+    if v['murder_slot'] and ph == 'ended':
+        st.write('الجريمة: النور قطع الساعة ' + str(v['murder_slot']) + ' في ' + str(v['scene']) + '.')
+    else:
+        st.write('الجريمة: النور قطع في ' + str(v['scene']) + '، بس محدش عارف الساعة كام بالظبط (٩ ولا ١٠ ولا ١١). استنتجوها من الكروت.')
+        if v.get('private') and v['private'].get('murder_slot'):
+            st.markdown('**الساعة الحقيقية (إنت بس اللي عارفها):** ' + str(v['private']['murder_slot']))
     if v.get('private'):
         st.markdown('**مكانك في الليلة (إنت بس اللي عارفه):** ' +
                     ' | '.join('%s: %s' % (s, p) for s, p in zip(['٩', '١٠', '١١'], v['private']['my_places'])))
+        if role == ROLE_KILLER:
+            st.caption('تزوير كارت: ' + ('باقيلك مرة واحدة للّيلة دي (اختار "تبوّظ أثر" وقت التفتيش)، وفيه دايماً دليل حقيقي بيكشفه.' if v['private']['forge_left'] else 'خلص، استخدمته.'))
         if v['private']['partners']:
             st.markdown('**شريكك:** ' + '، '.join(v['private']['partners']))
     if ph == 'alibi':
@@ -153,7 +166,10 @@ def _room():
         st.subheader('الجولة ' + str(v['round']) + ': اتكلموا بصوتكم')
         st.caption('المحاولات الباقية: ' + str(v['chances']))
         if v['statements']:
-            st.markdown('**كل واحد قال كان فين وقت القتل:** ' + ' | '.join('%s: %s' % (n, p) for n, p in v['statements'].items()))
+            st.markdown('**كل واحد قال كان فين (٩ / ١٠ / ١١):**')
+            for n, route in v['statements'].items():
+                st.write('• %s: %s' % (n, ' ← '.join(route)))
+            st.caption('واحد بس كدب في ساعة واحدة. الكروت هي اللي بتكشف مين.')
         st.markdown('**كروتك (سرية لحد ما تحطها):**')
         shown = {c['id'] for c in v['board']}
         for c in v['my_cards']:
@@ -172,9 +188,15 @@ def _room():
                     _try('approve', dict(suspect=pr['suspect'], cards=pr['cards']))
         elif len(v['board']) >= 2:
             sus = st.selectbox('مين المتهم؟', [n for n in v['players'] if n != v['me']], key='night_sus')
-            ids = st.multiselect('كارتين من الترابيزة بيكذّبوا كلامه', [c['id'] for c in v['board']], max_selections=2, key='night_ids')
+            ids = st.multiselect('كارتين من الترابيزة بيكذّبوا كلامه (الكارت لازم ساعته تكون معروفة)', [c['id'] for c in v['board'] if c['kind'] != 'link'], max_selections=2, key='night_ids')
             if st.button('اطرح الاتهام', key='night_propose') and len(ids) == 2:
                 _try('propose', dict(suspect=sus, cards=ids))
+        if len(v['board']) >= 2:
+            with st.expander('كارتين شكلهم متناقضين؟ واجهوهم'):
+                st.caption('لو كارت بيقول إن حد كان في مكان وشهادة الشخص نفسه بتقول مكان تاني، واحد منهم مزوّر. الكارت المزوّر بيتسحب ومينفعش يتستخدم في اتهام.')
+                cids = st.multiselect('كارتين من الترابيزة', [c['id'] for c in v['board'] if c['kind'] != 'link'], max_selections=2, key='night_cids')
+                if st.button('واجه الكارتين', key='night_challenge') and len(cids) == 2:
+                    _try('challenge', dict(cards=cids))
         if v['seconds_left'] is not None:
             st.caption('الوقت الباقي: ' + str(v['seconds_left']) + ' ثانية')
         if v['host'] and st.button('خلّصوا الجولة', key='night_next'):
@@ -182,7 +204,7 @@ def _room():
     if ph == 'ended':
         res = v['result']
         st.subheader('خلصت الليلة: ' + res['winner'] + ' كسب')
-        st.write(res['why'] + '. القاتل كان: ' + '، '.join(res['killers']))
+        st.write(res['why'] + '. القاتل كان: ' + '، '.join(res['killers']) + '. الجريمة كانت الساعة ' + str(res['truth']['m']) + ' في ' + str(res['truth']['scene']) + '.')
     if v['log']:
         with st.expander('اللي حصل'):
             for line in v['log']:
