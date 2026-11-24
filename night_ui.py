@@ -192,11 +192,11 @@ def _room():
             if st.button('اطرح الاتهام', key='night_propose') and len(ids) == 2:
                 _try('propose', dict(suspect=sus, cards=ids))
         if len(v['board']) >= 2:
-            with st.expander('كارتين شكلهم متناقضين؟ واجهوهم'):
-                st.caption('لو كارت بيقول إن حد كان في مكان وشهادة الشخص نفسه بتقول مكان تاني، واحد منهم مزوّر. الكارت المزوّر بيتسحب ومينفعش يتستخدم في اتهام.')
-                cids = st.multiselect('كارتين من الترابيزة', [c['id'] for c in v['board'] if c['kind'] != 'link'], max_selections=2, key='night_cids')
-                if st.button('واجه الكارتين', key='night_challenge') and len(cids) == 2:
-                    _try('challenge', dict(cards=cids))
+            st.markdown('**كارتين شكلهم متناقضين؟ واجهوهم**')
+            st.caption('لو كارت بيقول إن حد كان في مكان وشهادة الشخص نفسه بتقول مكان تاني، واحد منهم مزوّر. الكارت المزوّر بيتسحب ومينفعش يتستخدم في اتهام.')
+            cids = st.multiselect('كارتين من الترابيزة', [c['id'] for c in v['board'] if c['kind'] != 'link'], max_selections=2, key='night_cids')
+            if st.button('واجه الكارتين', key='night_challenge') and len(cids) == 2:
+                _try('challenge', dict(cards=cids))
         if v['seconds_left'] is not None:
             st.caption('الوقت الباقي: ' + str(v['seconds_left']) + ' ثانية')
         if v['host'] and st.button('خلّصوا الجولة', key='night_next'):
