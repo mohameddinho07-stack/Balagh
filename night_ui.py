@@ -13,10 +13,15 @@ from night_store import DurableStore
 
 
 _CSS = """<style>
-[data-baseweb="select"] span[data-baseweb="tag"]{background:#e7d5ae!important;color:#101b19!important;border:1px solid #e7d5ae!important;}
+[data-testid="stMultiSelect"] div[data-rac]{background:#21372e!important;border-color:#6c8067!important;}
+[data-testid="stMultiSelect"] [data-tag]{background:#e7d5ae!important;color:#101b19!important;border:1px solid #e7d5ae!important;}
+[data-testid="stMultiSelect"] [data-tag] span{color:#101b19!important;background:transparent!important;}
+[data-testid="stMultiSelect"] [data-tag] button{background:transparent!important;color:#101b19!important;}
+[data-testid="stMultiSelect"] [data-tag] svg{fill:#101b19!important;color:#101b19!important;}
+[data-testid="stMultiSelect"] input{background:transparent!important;color:#eee5cf!important;}
+[data-testid="stMultiSelect"] button[aria-label="Clear all"],[data-testid="stMultiSelect"] button[aria-label="Open"]{background:transparent!important;color:#eee5cf!important;}
+[data-baseweb="select"] span[data-baseweb="tag"]{background:#e7d5ae!important;color:#101b19!important;}
 [data-baseweb="select"] span[data-baseweb="tag"] *{color:#101b19!important;fill:#101b19!important;background:transparent!important;}
-[data-baseweb="select"] input{background:transparent!important;color:#eee5cf!important;}
-[data-baseweb="select"]>div{border:1px solid #6c8067!important;}
 </style>"""
 
 def _store():
