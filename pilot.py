@@ -32,6 +32,18 @@ MOOD = {
 
 # person id, statement already heard, evidence the player has earned -> question to re-open.
 CONFRONT = {
+ '001': [
+  dict(person='nadine', statement='n1', evidence='E06', unlocks='n2'),
+  dict(person='nadine', statement='n2', evidence='E07', unlocks='n3'),
+  dict(person='nadine', statement='n3', evidence='E08', unlocks='n4'),
+  dict(person='nadine', statement='n4', evidence='E05', unlocks='n5'),
+ ],
+ '003': [
+  dict(person='dalia', statement='b304', evidence='E02', unlocks='b305'),
+  dict(person='dalia', statement='b305', evidence='E06', unlocks='b306'),
+  dict(person='dalia', statement='b306', evidence='E07', unlocks='b307'),
+  dict(person='dalia', statement='b307', evidence='E05', unlocks='b314'),
+ ],
  '002': [
   dict(person='bassem', statement='s204', evidence='E05', unlocks='s205'),
   dict(person='bassem', statement='s205', evidence='E06', unlocks='s206'),
